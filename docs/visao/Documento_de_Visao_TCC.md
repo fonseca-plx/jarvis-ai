@@ -2,9 +2,9 @@
 
 **Projeto:** TCC --- Assistente Conversacional por Voz para Interação
 com Sistemas de Informação\
-**Versão:** 1.0\
+**Versão:** 1.1\
 **Status:** Em elaboração\
-**Data:** 2026-09-13
+**Data:** 2026-09-15
 
 ------------------------------------------------------------------------
 
@@ -17,8 +17,10 @@ de alto nível que orientarão as etapas posteriores de análise, projeto,
 implementação e avaliação.
 
 O documento funciona como artefato de visão do projeto e não pretende
-substituir a especificação detalhada dos requisitos, dos casos de uso,
-da arquitetura ou do protocolo experimental.
+substituir a especificação detalhada dos requisitos, dos casos de uso ou
+da arquitetura. Critérios e indicadores de avaliação são registrados
+apenas em nível de visão e poderão fundamentar uma avaliação sistemática
+em trabalho futuro.
 
 ------------------------------------------------------------------------
 
@@ -79,25 +81,29 @@ cognitiva decorrente da natureza linear e efêmera da comunicação por
 
 Dessa forma, o problema central do projeto consiste em:
 
-> **Como projetar e implementar um assistente conversacional por voz
-> capaz de interagir com um sistema de informação por meio de
-> ferramentas estruturadas, mantendo propriedades de qualidade
-> conversacional e permitindo a avaliação objetiva de sua capacidade de
-> execução, recuperação de erros e eficiência de interação?**
+> **Como projetar e implementar, de forma sistemática, um assistente
+> conversacional por voz baseado em LLM e uso de ferramentas, capaz de
+> interagir com um sistema de informação por meio de linguagem natural,
+> mantendo mecanismos de contexto, tratamento de ambiguidades,
+> recuperação de erros e controle da interação?**
 
 ------------------------------------------------------------------------
 
 ## 4. Objetivo Geral
 
-Projetar, implementar e avaliar um assistente conversacional por voz
-baseado em modelo de linguagem, capaz de interpretar solicitações em
-linguagem natural e utilizar ferramentas estruturadas para interagir com
-um sistema de informação de domínio definido.
+Projetar e implementar um assistente conversacional por voz baseado em
+modelo de linguagem, capaz de interpretar solicitações em linguagem
+natural e utilizar ferramentas estruturadas para interagir com um
+sistema de informação de domínio definido.
 
 A solução deverá ser construída de forma modular e desacoplada do
-domínio, permitindo avaliar tanto a qualidade da interação
-conversacional quanto a capacidade do agente de selecionar e executar
-ferramentas corretamente.
+domínio, permitindo verificar o atendimento aos requisitos e demonstrar,
+por meio de cenários derivados dos casos de uso, o comportamento dos
+principais mecanismos de interação e uso de ferramentas.
+
+Como resultado complementar, o trabalho poderá sistematizar critérios e
+indicadores para uma avaliação experimental posterior, sem assumir sua
+execução como parte obrigatória do escopo principal.
 
 ------------------------------------------------------------------------
 
@@ -116,15 +122,13 @@ ferramentas corretamente.
     disponibilizadas pelo domínio.
 -   Implementar mecanismos de gerenciamento de contexto, preenchimento
     de parâmetros, tratamento de ambiguidades e recuperação de erros.
--   Definir cenários experimentais que representem diferentes condições
-    de interação.
--   Definir métricas objetivas para avaliar a execução de tarefas, uso
-    de ferramentas, eficiência conversacional, recuperação de erros e
-    desempenho.
--   Avaliar experimentalmente o comportamento da solução no estudo de
-    caso.
--   Analisar os resultados em relação aos requisitos e critérios
-    estabelecidos.
+-   Derivar cenários de verificação a partir dos requisitos e dos casos
+    de uso, contemplando situações normais, informações ausentes,
+    ambiguidades, correções e falhas.
+-   Verificar o comportamento do protótipo diante dos cenários definidos
+    e o atendimento aos requisitos implementados.
+-   Sistematizar, em nível conceitual, critérios e indicadores que possam
+    orientar uma avaliação experimental futura da solução.
 
 ------------------------------------------------------------------------
 
@@ -246,7 +250,7 @@ durante a especificação do estudo de caso.
 
 ### 7.4 Pesquisador/Desenvolvedor
 
-Responsável por projetar, implementar, instrumentar e avaliar a solução.
+Responsável por projetar, implementar, instrumentar e verificar a solução.
 
 ------------------------------------------------------------------------
 
@@ -254,7 +258,7 @@ Responsável por projetar, implementar, instrumentar e avaliar a solução.
 
 ### 8.1 Incluído no escopo
 
-A solução deverá contemplar, em nível de projeto:
+A solução deverá contemplar, em nível de projeto e implementação:
 
 -   entrada de voz;
 -   reconhecimento de fala;
@@ -274,11 +278,14 @@ A solução deverá contemplar, em nível de projeto:
 -   geração de respostas;
 -   síntese de voz;
 -   registro das etapas relevantes da execução;
--   avaliação experimental baseada em cenários e métricas.
+-   verificação do comportamento por meio de cenários derivados dos
+    requisitos e casos de uso;
+-   definição conceitual de critérios e indicadores para avaliação
+    futura.
 
 ### 8.2 Fora do escopo inicial
 
-Não fazem parte do escopo principal:
+Não fazem parte do escopo principal desta versão do trabalho:
 
 -   treinamento de um LLM próprio;
 -   desenvolvimento de um novo modelo de reconhecimento ou síntese de
@@ -288,13 +295,34 @@ Não fazem parte do escopo principal:
 -   reconhecimento avançado de emoções;
 -   aprendizado por reforço para otimização do agente;
 -   desenvolvimento de um sistema de informação completo e genérico;
--   comparação exaustiva entre múltiplos LLMs, salvo se posteriormente
-    definido como parte do protocolo experimental;
+-   comparação exaustiva entre múltiplos LLMs;
+-   execução de um protocolo experimental sistemático envolvendo
+    múltiplas configurações, métricas e análise comparativa;
 -   implementação de mecanismos avançados de autonomia não necessários
     para demonstrar os objetivos do trabalho.
 
 Esses elementos podem ser discutidos como trabalhos futuros, mas não
 constituem requisitos necessários para a primeira versão da solução.
+
+------------------------------------------------------------------------
+
+## 8.3 Delimitação da avaliação
+
+A avaliação experimental sistemática não constitui, nesta versão do
+Documento de Visão, uma entrega obrigatória para a conclusão do TCC.
+
+O trabalho deverá, entretanto, manter condições técnicas que não
+impeçam uma avaliação posterior. Para isso, a solução será projetada
+com observabilidade suficiente para registrar eventos relevantes da
+interação, chamadas de ferramentas e resultados de execução.
+
+A verificação prevista para o escopo principal concentra-se em
+demonstrar, por meio de cenários derivados dos requisitos e casos de uso,
+que o protótipo apresenta os comportamentos especificados. Uma avaliação
+quantitativa mais ampla, com métricas como taxa de sucesso da tarefa,
+precisão de seleção de ferramentas, precisão de argumentos, retenção de
+contexto, número de turnos e latência, poderá ser realizada
+posteriormente.
 
 ------------------------------------------------------------------------
 
@@ -305,157 +333,44 @@ específica. Este documento registra apenas sua visão consolidada.
 
 ### 9.1 Requisitos Funcionais
 
-  -----------------------------------------------------------------------
-  ID                                  Requisito
-  ----------------------------------- -----------------------------------
-  RF01                                O assistente deve receber
-                                      solicitações de voz e
-                                      disponibilizar sua representação
-                                      textual para processamento.
-
-  RF02                                O assistente deve interpretar
-                                      solicitações em linguagem natural
-                                      para identificar intenções e
-                                      parâmetros relevantes.
-
-  RF03                                O assistente deve manter
-                                      informações relevantes do contexto
-                                      conversacional.
-
-  RF04                                O assistente deve resolver
-                                      referências contextuais quando sua
-                                      interpretação for suficientemente
-                                      determinada.
-
-  RF05                                O assistente deve identificar os
-                                      parâmetros relevantes para a
-                                      operação solicitada.
-
-  RF06                                O assistente deve utilizar
-                                      múltiplos parâmetros fornecidos em
-                                      uma mesma solicitação,
-                                      independentemente de sua ordem.
-
-  RF07                                O assistente deve solicitar
-                                      informações necessárias que não
-                                      tenham sido fornecidas.
-
-  RF08                                O assistente deve detectar e tratar
-                                      solicitações ambíguas antes da
-                                      execução de operações que dependam
-                                      de esclarecimento.
-
-  RF09                                O assistente deve selecionar uma
-                                      ferramenta disponível que
-                                      corresponda à intenção
-                                      identificada.
-
-  RF10                                O assistente deve gerar os
-                                      argumentos necessários para a
-                                      ferramenta selecionada.
-
-  RF11                                O assistente deve validar os
-                                      argumentos antes da execução da
-                                      ferramenta.
-
-  RF12                                O assistente deve executar
-                                      ferramentas explicitamente
-                                      disponibilizadas pelo domínio.
-
-  RF13                                O assistente deve utilizar os
-                                      resultados das ferramentas para
-                                      determinar a continuidade da
-                                      interação e gerar a resposta ao
-                                      usuário.
-
-  RF14                                O assistente deve informar falhas
-                                      de execução de forma compatível com
-                                      o resultado efetivamente obtido.
-
-  RF15                                O assistente deve permitir a
-                                      recuperação de tarefas quando novas
-                                      informações possibilitarem sua
-                                      continuidade segura.
-
-  RF16                                O assistente deve permitir o
-                                      cancelamento de operações em
-                                      andamento quando aplicável.
-
-  RF17                                O assistente deve permitir o
-                                      encerramento da interação mediante
-                                      comandos apropriados.
-
-  RF18                                O assistente deve solicitar
-                                      confirmação para operações
-                                      previamente definidas como
-                                      dependentes de confirmação.
-
-  RF19                                O assistente deve gerar uma
-                                      resposta textual correspondente ao
-                                      estado da interação e ao resultado
-                                      da operação.
-
-  RF20                                O assistente deve converter a
-                                      resposta textual em áudio para
-                                      apresentação ao usuário.
-  -----------------------------------------------------------------------
+| ID  | Requisito |
+| --- | --------- |
+| RF01 | O assistente deve receber solicitações de voz e disponibilizar sua representação textual para processamento. |
+| RF02 | O assistente deve interpretar solicitações em linguagem natural para identificar intenções e parâmetros relevantes. |
+| RF03 | O assistente deve manter informações relevantes do contexto conversacional. |
+| RF04 | O assistente deve resolver referências contextuais quando sua interpretação for suficientemente determinada. |
+| RF05 | O assistente deve identificar os parâmetros relevantes para a operação solicitada. |
+| RF06 | O assistente deve utilizar múltiplos parâmetros fornecidos em uma mesma solicitação, independentemente de sua ordem. |
+| RF07 | O assistente deve solicitar informações necessárias que não tenham sido fornecidas. |
+| RF08 | O assistente deve detectar e tratar solicitações ambíguas antes da execução de operações que dependam de esclarecimento. |
+| RF09 | O assistente deve selecionar uma ferramenta disponível que corresponda à intenção identificada. |
+| RF10 | O assistente deve gerar os argumentos necessários para a ferramenta selecionada. |
+| RF11 | O assistente deve validar os argumentos antes da execução da ferramenta. |
+| RF12 | O assistente deve executar ferramentas explicitamente disponibilizadas pelo domínio. |
+| RF13 | O assistente deve utilizar os resultados das ferramentas para determinar a continuidade da interação e gerar a resposta ao usuário. |
+| RF14 | O assistente deve informar falhas de execução de forma compatível com o resultado efetivamente obtido. |
+| RF15 | O assistente deve permitir a recuperação de tarefas quando novas informações possibilitarem sua continuidade segura. |
+| RF16 | O assistente deve permitir o cancelamento de operações em andamento quando aplicável. |
+| RF17 | O assistente deve permitir o encerramento da interação mediante comandos apropriados. |
+| RF18 | O assistente deve solicitar confirmação para operações previamente definidas como dependentes de confirmação. |
+| RF19 | O assistente deve gerar uma resposta textual correspondente ao estado da interação e ao resultado da operação. |
+| RF20 | O assistente deve converter a resposta textual em áudio para apresentação ao usuário. |
 
 ### 9.2 Requisitos Não Funcionais
 
-  -----------------------------------------------------------------------
-  ID                                  Requisito
-  ----------------------------------- -----------------------------------
-  RNF01                               A camada conversacional deve ser
-                                      desacoplada das entidades e regras
-                                      específicas do domínio.
-
-  RNF02                               Os principais componentes do
-                                      sistema devem possuir
-                                      responsabilidades modularmente
-                                      definidas.
-
-  RNF03                               A execução das interações deve ser
-                                      observável por meio de registros
-                                      estruturados.
-
-  RNF04                               Cada execução deve possuir
-                                      identificação que permita rastrear
-                                      seus principais eventos.
-
-  RNF05                               O sistema deve evitar a execução de
-                                      operações quando intenção ou
-                                      parâmetros necessários não forem
-                                      suficientemente determinados.
-
-  RNF06                               As operações realizadas pelo
-                                      assistente devem respeitar as
-                                      regras de negócio do sistema de
-                                      informação.
-
-  RNF07                               Falhas de ferramentas ou
-                                      componentes externos não devem
-                                      resultar em respostas que indiquem
-                                      sucesso inexistente.
-
-  RNF08                               O sistema deve permitir a medição
-                                      da latência das principais etapas
-                                      de processamento.
-
-  RNF09                               As respostas devem apresentar
-                                      informações suficientes para
-                                      comunicar o resultado sem
-                                      sobrecarga desnecessária.
-
-  RNF10                               O sistema deve preservar
-                                      informações necessárias à
-                                      recuperação de tarefas quando isso
-                                      for seguro e aplicável.
-
-  RNF11                               O agente deve ter acesso somente às
-                                      operações explicitamente
-                                      disponibilizadas pela interface de
-                                      ferramentas.
-  -----------------------------------------------------------------------
+| ID  | Requisito |
+| --- | --------- |
+| RNF01 | A camada conversacional deve ser desacoplada das entidades e regras específicas do domínio. |
+| RNF02 | Os principais componentes do sistema devem possuir responsabilidades modularmente definidas. |
+| RNF03 | A execução das interações deve ser observável por meio de registros estruturados. |
+| RNF04 | Cada execução deve possuir identificação que permita rastrear seus principais eventos. |
+| RNF05 | O sistema deve evitar a execução de operações quando intenção ou parâmetros necessários não forem suficientemente determinados. |
+| RNF06 | As operações realizadas pelo assistente devem respeitar as regras de negócio do sistema de informação. |
+| RNF07 | Falhas de ferramentas ou componentes externos não devem resultar em respostas que indiquem sucesso inexistente. |
+| RNF08 | O sistema deve permitir a medição da latência das principais etapas de processamento. |
+| RNF09 | As respostas devem apresentar informações suficientes para comunicar o resultado sem sobrecarga desnecessária. |
+| RNF10 | O sistema deve preservar informações necessárias à recuperação de tarefas quando isso for seguro e aplicável. |
+| RNF11 | O agente deve ter acesso somente às operações explicitamente disponibilizadas pela interface de ferramentas. |
 
 ------------------------------------------------------------------------
 
@@ -518,11 +433,16 @@ reestruturar integralmente a lógica conversacional.
 
 ------------------------------------------------------------------------
 
-## 11. Critérios de Avaliação
+## 11. Critérios de Verificação e Avaliação Futura
 
-Os critérios de avaliação serão especificados detalhadamente no
-protocolo experimental. Em nível de visão, a solução deverá permitir a
-análise de pelo menos quatro dimensões.
+Nesta versão do trabalho, a verificação do protótipo será realizada
+principalmente por meio de cenários derivados dos requisitos e casos de
+uso. Não se estabelece, como compromisso de escopo, a execução de um
+protocolo experimental sistemático.
+
+Ainda assim, a literatura e a matriz de engenharia permitem registrar
+indicadores que poderão fundamentar uma avaliação futura. Em nível de
+visão, são consideradas quatro dimensões.
 
 ### 11.1 Sucesso da tarefa
 
@@ -577,8 +497,11 @@ Indicadores:
 -   latência da ferramenta;
 -   latência da síntese de voz.
 
-As métricas definitivas, fórmulas e critérios de sucesso serão
-estabelecidos no artefato de Protocolo de Avaliação.
+As métricas definitivas, fórmulas, procedimentos de coleta e critérios
+de análise não são definidos como entregáveis obrigatórios desta versão.
+Caso haja tempo e viabilidade, poderão ser detalhados em um Protocolo de
+Avaliação; caso contrário, permanecerão como proposta para trabalhos
+futuros.
 
 ------------------------------------------------------------------------
 
@@ -592,8 +515,7 @@ estabelecidos no artefato de Protocolo de Avaliação.
     estruturadas.
 -   O sistema deverá permitir observação das principais etapas de
     execução.
--   A avaliação deverá ser realizada sobre cenários controlados e
-    reproduzíveis.
+-   A verificação deverá utilizar cenários controlados e reproduzíveis.
 -   A implementação deverá permanecer compatível com o escopo e os
     recursos disponíveis para o TCC.
 
@@ -605,53 +527,26 @@ estabelecidos no artefato de Protocolo de Avaliação.
     permitir validação de argumentos.
 -   O LLM utilizado será capaz de realizar chamadas estruturadas de
     ferramentas.
--   O ambiente experimental permitirá registrar as entradas, decisões,
-    chamadas e resultados necessários à avaliação.
+-   O ambiente de desenvolvimento permitirá registrar as entradas,
+    decisões, chamadas e resultados relevantes para verificação e, se
+    posteriormente realizada, avaliação.
 
 ------------------------------------------------------------------------
 
 ## 13. Riscos Principais
 
-  -----------------------------------------------------------------------
-  Risco                   Impacto                 Mitigação inicial
-  ----------------------- ----------------------- -----------------------
-  Interpretação incorreta Alto                    Cenários controlados,
-  da solicitação                                  validação e reprompting
-
-  Seleção incorreta de    Alto                    Registro de
-  ferramenta                                      ferramentas, schemas e
-                                                  métricas específicas
-
-  Argumentos inválidos    Alto                    Validação antes da
-                                                  execução
-
-  Alucinação de           Alto                    Tool Registry fechado e
-  ferramentas                                     validação
-
-  Perda de contexto       Médio/alto              Estado conversacional
-                                                  explícito e cenários
-                                                  multi-turno
-
-  Respostas incompatíveis Alto                    Resultados estruturados
-  com resultados reais                            e verificação de
-                                                  grounding
-
-  Latência elevada        Médio                   Instrumentação por
-                                                  componente e
-                                                  caracterização
-
-  Sobrecarga auditiva     Médio                   Respostas concisas,
-                                                  chunking e progressive
-                                                  disclosure
-
-  Falha de componentes    Médio                   Tratamento de erros e
-  externos                                        recuperação
-
-  Crescimento excessivo   Alto                    Priorização dos
-  do escopo                                       requisitos e
-                                                  delimitação do estudo
-                                                  de caso
-  -----------------------------------------------------------------------
+| Risco  | Impacto | Mitigação inicial |
+| ------ | ------- | ----------------- |
+| Interpretação incorreta | Alto | Cenários controlados, da solicitação validação e reprompting |
+| Seleção incorreta de ferramenta | Alto | Registro de ferramentas, schemas e métricas específicas |
+| Argumentos inválidos | Alto | Validação antes da execução |
+| Alucinação de ferramentas | Alto | Tool Registry fechado e validação |
+| Perda de contexto | Médio/alto | Estado conversacional explícito e cenários multi-turno |
+| Respostas incompatíveis com resultados reais | Alto | Resultados estruturados e verificação de grounding |
+| Latência elevada | Médio | Instrumentação por componente e caracterização |
+| Sobrecarga auditiva | Médio | Respostas concisas, chunking e progressive disclosure |
+| Falha de componentes externos | Médio | Tratamento de erros e recuperação |
+| Crescimento excessivo do escopo | Alto | Priorização dos requisitos e delimitação do estudo de caso |
 
 ------------------------------------------------------------------------
 
@@ -671,19 +566,21 @@ Este Documento de Visão será complementado pelos seguintes artefatos:
     resultados das tools.
 6.  **Documento/Modelo de Arquitetura** --- estrutura dos componentes e
     suas responsabilidades.
-7.  **Matriz de Cenários Experimentais** --- situações utilizadas para
-    exercitar os requisitos.
-8.  **Protocolo de Avaliação** --- métricas, procedimentos, dados
-    coletados e critérios de análise.
-9.  **Relatório de Resultados** --- resultados e análise dos
-    experimentos.
+7.  **Matriz de Cenários de Verificação** --- situações utilizadas
+    para exercitar os requisitos e casos de uso.
+8.  **Proposta/Protocolo de Avaliação** --- critérios, métricas e
+    procedimentos que poderão ser utilizados em avaliação futura, caso
+    esta seja realizada.
+9.  **Relatório de Resultados** --- aplicável caso seja conduzida uma
+    avaliação experimental sistemática.
 
 ------------------------------------------------------------------------
 
 ## 15. Rastreabilidade em Alto Nível
 
 A estratégia de engenharia adotada busca manter uma cadeia de
-rastreabilidade desde a literatura até a avaliação experimental:
+rastreabilidade desde a literatura até a verificação do sistema,
+mantendo a avaliação experimental como possível extensão:
 
 ``` text
 Literatura
@@ -704,30 +601,45 @@ Decisões arquiteturais
 Implementação
     │
     ▼
-Cenários experimentais
+Cenários de verificação
     │
     ▼
-Dados coletados
+Comportamento observado
     │
     ▼
-Métricas
+Atendimento aos requisitos
+    │
+    ▼
+Avaliação experimental futura (opcional)
+    │
+    ▼
+Dados + métricas (opcional)
     │
     ▼
 Resultados
 ```
 
 Essa rastreabilidade permitirá relacionar as decisões de projeto às
-evidências utilizadas para justificá-las e aos critérios empregados para
-verificar seu comportamento.
+evidências utilizadas para justificá-las, aos requisitos e casos de uso
+que as concretizam e aos cenários empregados para verificar o
+comportamento do protótipo. Também preserva a possibilidade de uma
+avaliação experimental posterior sem torná-la uma dependência para a
+conclusão do trabalho.
 
 ------------------------------------------------------------------------
 
 ## 16. Evolução do Documento
 
-Este documento representa a visão inicial do projeto. Os requisitos,
-casos de uso, arquitetura e critérios de avaliação poderão ser refinados
-durante as iterações do Processo Unificado, desde que as alterações
-sejam justificadas e sua rastreabilidade seja preservada.
+Este documento representa a visão consolidada do projeto após o
+refinamento inicial de escopo. Os requisitos, casos de uso, arquitetura
+e cenários de verificação poderão ser refinados durante as iterações do
+Processo Unificado, desde que as alterações sejam justificadas e sua
+rastreabilidade seja preservada.
+
+A avaliação experimental sistemática permanece como possibilidade de
+extensão. Sua eventual incorporação deverá ocorrer somente se houver
+tempo e recursos compatíveis com o cronograma do TCC, sem comprometer as
+entregas centrais de engenharia, implementação e verificação.
 
 As decisões tecnológicas específicas, como modelo de linguagem,
 framework de integração, provedor de reconhecimento/síntese de voz e
