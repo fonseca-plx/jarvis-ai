@@ -2,7 +2,7 @@
 
 **Identificador:** UC03  
 **Nome:** Realizar empréstimo  
-**Versão:** 1.0  
+**Versão:** 1.1  
 **Prioridade:** Alta
 
 ## 1. Objetivo
@@ -50,12 +50,12 @@ ou, após uma consulta anterior:
 - O resultado da operação é processado.
 - O usuário é informado sobre o resultado efetivamente obtido.
 
-### Em caso de falha
+### Em caso de falha ou cancelamento
 
 - A operação não é considerada concluída.
-- A causa ou situação da falha é comunicada ao usuário de forma adequada, quando identificável.
+- A situação é comunicada ao usuário de forma adequada, quando identificável.
 - O sistema não informa que o empréstimo foi realizado caso a operação não tenha sido efetivamente concluída.
-- Quando possível, o usuário pode fornecer novas informações ou corrigir a solicitação sem reiniciar toda a interação.
+- Quando possível, o usuário pode fornecer novas informações, corrigir a solicitação ou realizar uma nova tentativa sem reiniciar necessariamente toda a interação.
 
 ## 6. Fluxo principal
 
@@ -66,13 +66,11 @@ ou, após uma consulta anterior:
 5. O sistema verifica se todas as informações necessárias para a operação estão disponíveis.
 6. O sistema determina a operação de domínio necessária e seleciona uma ferramenta compatível.
 7. O sistema prepara e valida os parâmetros da chamada da ferramenta.
-8. Quando a operação exigir confirmação do usuário, o sistema apresenta a solicitação de confirmação.
-9. O usuário confirma a realização do empréstimo.
-10. O sistema executa a operação por meio da ferramenta selecionada.
-11. O sistema processa o resultado retornado pela ferramenta.
-12. O sistema gera uma resposta correspondente ao resultado da operação.
-13. O sistema entrega a resposta ao usuário por voz.
-14. O caso de uso é encerrado.
+8. O sistema executa a operação por meio da ferramenta selecionada.
+9. O sistema processa o resultado retornado pela ferramenta.
+10. O sistema gera uma resposta correspondente ao resultado da operação.
+11. O sistema entrega a resposta ao usuário por voz.
+12. O caso de uso é encerrado.
 
 ## 7. Fluxos alternativos
 
@@ -102,16 +100,16 @@ ou, após uma consulta anterior:
 
 ### FA04 — Confirmação da operação
 
-**No passo 8**, a operação requer confirmação explícita do usuário.
+**Após o passo 7**, caso a operação exija confirmação explícita do usuário:
 
 1. O sistema informa ao usuário a operação que será realizada.
 2. O sistema solicita confirmação.
-3. O usuário confirma.
-4. O fluxo prossegue a partir do passo 10.
+3. O usuário confirma a realização do empréstimo.
+4. O fluxo prossegue a partir do passo 8.
 
 ### FA05 — Usuário não confirma
 
-**No passo 9**, o usuário não confirma a realização do empréstimo.
+**Durante o FA04**, o usuário não confirma a realização do empréstimo.
 
 1. O sistema não executa a operação.
 2. O sistema informa que o empréstimo não foi realizado.
@@ -129,7 +127,7 @@ Durante a identificação ou preparação da operação, o usuário corrige ou s
 
 ### FE01 — Recurso não encontrado
 
-**No passo 3 ou durante a execução da consulta necessária**, o recurso informado pelo usuário não é encontrado.
+**No passo 3 ou durante a execução de consulta necessária**, o recurso informado pelo usuário não é encontrado.
 
 1. O sistema informa que não conseguiu localizar o recurso.
 2. O sistema pode solicitar uma nova identificação ou permitir que o usuário encerre a interação.
@@ -137,7 +135,7 @@ Durante a identificação ou preparação da operação, o usuário corrige ou s
 
 ### FE02 — Empréstimo não permitido
 
-**No passo 10**, o sistema de domínio informa que o empréstimo não pode ser realizado devido a alguma condição ou regra de negócio.
+**No passo 8**, o sistema de domínio informa que o empréstimo não pode ser realizado devido a alguma condição ou regra de negócio.
 
 1. O sistema processa a informação retornada.
 2. O sistema informa ao usuário que o empréstimo não foi realizado e comunica a condição apresentada pelo sistema de domínio, quando disponível.
@@ -162,7 +160,7 @@ Durante a identificação ou preparação da operação, o usuário corrige ou s
 
 ### FE05 — Falha na execução da ferramenta
 
-**No passo 10**, ocorre uma falha durante a execução da ferramenta.
+**No passo 8**, ocorre uma falha durante a execução da ferramenta.
 
 1. O sistema identifica a falha.
 2. O sistema informa ao usuário que não conseguiu concluir o empréstimo.
@@ -171,7 +169,7 @@ Durante a identificação ou preparação da operação, o usuário corrige ou s
 
 ### FE06 — Resultado inconclusivo
 
-**No passo 11**, o resultado retornado pela ferramenta não permite determinar se o empréstimo foi efetivamente realizado.
+**No passo 9**, o resultado retornado pela ferramenta não permite determinar se o empréstimo foi efetivamente realizado.
 
 1. O sistema não afirma que o empréstimo foi concluído.
 2. O sistema informa ao usuário que não foi possível confirmar o resultado da operação.
