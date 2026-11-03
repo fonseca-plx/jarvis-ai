@@ -1,573 +1,768 @@
 # Modelo de Arquitetura
 
 **Projeto:** Assistente Conversacional por Voz com Uso de Ferramentas  
-**Versão:** 1.0  
-**Finalidade:** Registrar a estrutura lógica dos componentes do sistema e suas principais responsabilidades.
+**Versão:** 1.1  
+**Finalidade:** Refinar o modelo arquitetural lógico, detalhando as interfaces entre componentes, os contratos de comunicação e os principais fluxos de interação.
 
 ---
 
-## 1. Objetivo
+# 1. Objetivo
 
-Este documento descreve o modelo arquitetural lógico do sistema, identificando seus principais componentes, responsabilidades e relações.
+Esta versão refina o modelo arquitetural definido na versão 1.0, acrescentando:
 
-A arquitetura é derivada dos requisitos funcionais, casos de uso e cenários de verificação definidos para o sistema. Neste nível, não são especificadas tecnologias, frameworks, modelos de linguagem ou protocolos concretos de comunicação.
+- interfaces lógicas entre componentes;
+- responsabilidades mais precisas;
+- contratos conceituais de comunicação;
+- fluxo de execução de uma solicitação que utiliza ferramentas;
+- fluxo de recuperação de falhas;
+- fronteiras entre o núcleo conversacional, o uso de ferramentas e o sistema de domínio.
 
-O modelo busca separar:
-
-- a interação com o usuário;
-- o processamento conversacional;
-- o gerenciamento de contexto e informações da tarefa;
-- o gerenciamento e uso de ferramentas;
-- a integração com o sistema de informação de domínio.
-
-Essa separação deve permitir que o núcleo conversacional permaneça relativamente desacoplado do domínio de aplicação utilizado no estudo de caso.
+O modelo permanece independente de tecnologias específicas. Modelos de linguagem, mecanismos de reconhecimento e síntese de voz, frameworks, protocolos e infraestruturas concretas serão definidos posteriormente.
 
 ---
 
-# 2. Visão geral da arquitetura
+# 2. Estrutura arquitetural refinada
 
-A estrutura lógica proposta é composta pelos seguintes elementos principais:
+A arquitetura é organizada em cinco áreas lógicas:
 
 ```text
-┌───────────────────────────────────────────────────────────┐
-│                    USUÁRIO                                │
-└──────────────────────────┬────────────────────────────────┘
-                           │
-                           ▼
-┌───────────────────────────────────────────────────────────┐
-│              INTERFACE CONVERSACIONAL                     │
-│                                                           │
-│  Entrada de voz  ←→  Resposta por voz                     │
-└──────────────────────────┬────────────────────────────────┘
-                           │
-                           ▼
-┌───────────────────────────────────────────────────────────┐
-│                 NÚCLEO CONVERSACIONAL                     │
-│                                                           │
-│  Interpretação  •  Contexto  •  Tarefa  •  Resposta      │
-└──────────────────────────┬────────────────────────────────┘
-                           │
-                           ▼
-┌───────────────────────────────────────────────────────────┐
-│                ORQUESTRADOR DE FERRAMENTAS                │
-│                                                           │
-│  Seleção → Preparação → Validação → Execução → Resultado │
-└──────────────────────────┬────────────────────────────────┘
-                           │
-                           ▼
-┌───────────────────────────────────────────────────────────┐
-│             INTERFACE DE FERRAMENTAS / ADAPTADOR          │
-│                                                           │
-│       Ferramentas autorizadas do domínio                  │
-└──────────────────────────┬────────────────────────────────┘
-                           │
-                           ▼
-┌───────────────────────────────────────────────────────────┐
-│              SISTEMA DE INFORMAÇÃO DE DOMÍNIO             │
-│                                                           │
-│     Dados + operações + regras de negócio                 │
-└───────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────┐
+│                        INTERAÇÃO                              │
+│                                                               │
+│                 Interface Conversacional                     │
+└───────────────────────────────┬───────────────────────────────┘
+                                │
+                                ▼
+┌───────────────────────────────────────────────────────────────┐
+│                  PROCESSAMENTO CONVERSACIONAL                 │
+│                                                               │
+│  ┌─────────────────────┐       ┌──────────────────────────┐  │
+│  │ Núcleo Conversacional│◄─────►│ Gerenciador de Contexto │  │
+│  └──────────┬──────────┘       └──────────────────────────┘  │
+│             │                                                 │
+│             ▼                                                 │
+│  ┌─────────────────────┐                                     │
+│  │ Gerenciador de      │                                     │
+│  │ Tarefa              │                                     │
+│  └──────────┬──────────┘                                     │
+└─────────────┼─────────────────────────────────────────────────┘
+              │
+              ▼
+┌───────────────────────────────────────────────────────────────┐
+│                    USO DE FERRAMENTAS                         │
+│                                                               │
+│                 Orquestrador de Ferramentas                   │
+│                              │                                │
+│                              ▼                                │
+│                 Registro / Interface de                       │
+│                       Ferramentas                             │
+└──────────────────────────────┬────────────────────────────────┘
+                               │
+                               ▼
+┌───────────────────────────────────────────────────────────────┐
+│                    INTEGRAÇÃO DE DOMÍNIO                      │
+│                                                               │
+│                 Adaptador de Domínio                          │
+│                              │                                │
+│                              ▼                                │
+│             Sistema de Informação de Domínio                  │
+└───────────────────────────────────────────────────────────────┘
 ```
 
-A direção das interações não representa necessariamente comunicação síncrona ou um protocolo específico. Ela representa principalmente o fluxo lógico de processamento.
+A arquitetura é organizada em camadas lógicas, mas não pressupõe que cada componente corresponda necessariamente a um processo, serviço, módulo ou aplicação independente.
 
 ---
 
-# 3. Componentes arquiteturais
+# 3. Interfaces entre componentes
 
-## 3.1 Interface Conversacional
+## 3.1 Interface de interação
+
+### Origem
+Interface Conversacional.
+
+### Destino
+Núcleo Conversacional.
 
 ### Responsabilidade
 
-Responsável pela interação multimodal ou predominantemente vocal com o usuário.
+Transportar uma solicitação do usuário para o núcleo conversacional.
 
-Suas principais responsabilidades são:
+### Entrada conceitual
 
-- receber a entrada de voz do usuário;
-- encaminhar a entrada para processamento conversacional;
-- receber a resposta textual produzida pelo núcleo conversacional;
-- converter a resposta para o canal de voz;
-- entregar a resposta ao usuário;
-- fornecer mecanismos necessários ao controle da interação quando aplicável.
+Uma solicitação contendo, no mínimo:
 
-### Requisitos relacionados
+- conteúdo reconhecido da entrada do usuário;
+- informações necessárias para identificar a interação;
+- estado mínimo da sessão, quando aplicável.
 
-- RF01 — Receber e processar entrada de voz
-- RF10 — Gerenciar controle da interação
-- RF11 — Gerar resposta textual
-- RF12 — Entregar resposta por voz
+### Saída conceitual
 
-### Observação
+Uma solicitação processável pelo núcleo conversacional.
 
-A interface não deve ser responsável por interpretar semanticamente a solicitação ou decidir qual operação de domínio deve ser executada.
+### Sentido inverso
+
+O Núcleo Conversacional fornece à Interface Conversacional uma resposta destinada ao usuário.
+
+A resposta deve conter, conceitualmente:
+
+- conteúdo textual;
+- estado da interação, quando relevante;
+- indicação de encerramento ou continuidade, quando aplicável.
 
 ---
 
-# 3.2 Núcleo Conversacional
+# 4. Interface de contexto
 
-### Responsabilidade
+## 4.1 Núcleo Conversacional → Gerenciador de Contexto
 
-Responsável pelo processamento da interação em linguagem natural e pela coordenação do comportamento conversacional do sistema.
+O Núcleo Conversacional pode consultar informações previamente estabelecidas na interação.
 
-Suas principais responsabilidades são:
+Exemplos:
 
-- interpretar a solicitação do usuário;
-- identificar a intenção ou objetivo da interação;
-- identificar entidades, informações e parâmetros relevantes;
-- utilizar informações disponíveis no contexto;
-- identificar informações ausentes;
-- solicitar informações adicionais quando necessário;
-- identificar ambiguidades e solicitar esclarecimentos;
-- determinar a próxima ação necessária para atender à solicitação;
-- receber resultados das operações executadas;
-- produzir uma resposta coerente com o estado da tarefa.
+- entidade mencionada anteriormente;
+- parâmetros já fornecidos;
+- resultado de uma operação anterior;
+- referências contextuais;
+- estado relevante da conversa.
 
-### Requisitos relacionados
+## 4.2 Gerenciador de Contexto → Núcleo Conversacional
 
-- RF02 — Interpretar solicitação em linguagem natural
-- RF03 — Gerenciar contexto conversacional
-- RF04 — Gerenciar informações necessárias à tarefa
-- RF08 — Processar resultados das ferramentas
-- RF09 — Tratar falhas e recuperar a interação
-- RF11 — Gerar resposta textual
+O Gerenciador de Contexto fornece as informações relevantes para interpretação da solicitação atual.
 
-### Observação
+## 4.3 Núcleo Conversacional → Gerenciador de Contexto
 
-O componente é descrito em termos de responsabilidade e não pressupõe que a interpretação seja realizada exclusivamente por um modelo de linguagem específico.
+Após o processamento de uma interação, o núcleo pode atualizar o contexto com novas informações relevantes.
+
+### Princípio
+
+O contexto deve conter informações úteis para a continuidade da tarefa, e não simplesmente reproduzir indiscriminadamente todo o histórico da conversa.
 
 ---
 
-# 3.3 Gerenciador de Contexto
+# 5. Interface de gerenciamento da tarefa
 
-### Responsabilidade
+## 5.1 Núcleo Conversacional → Gerenciador de Tarefa
 
-Responsável por manter e disponibilizar informações relevantes das interações anteriores para continuidade da tarefa.
+O Núcleo Conversacional informa:
 
-Suas principais responsabilidades são:
+- objetivo identificado;
+- informações já determinadas;
+- informações solicitadas pelo usuário;
+- operação pretendida;
+- estado atual da interação.
 
-- armazenar informações relevantes da interação corrente;
-- recuperar informações previamente estabelecidas;
-- associar referências contextuais às entidades correspondentes;
-- disponibilizar informações de contexto ao processamento da solicitação;
-- atualizar o contexto conforme a interação evolui;
-- descartar ou deixar de considerar informações que não sejam mais relevantes à tarefa.
+## 5.2 Gerenciador de Tarefa → Núcleo Conversacional
 
-### Requisitos relacionados
+O Gerenciador de Tarefa fornece:
 
-- RF03 — Gerenciar contexto conversacional
-- RF04 — Gerenciar informações necessárias à tarefa
+- informações já conhecidas;
+- informações ainda necessárias;
+- estado atual da tarefa;
+- indicação de suficiência das informações disponíveis;
+- necessidade de esclarecimento ou recuperação.
 
-### Exemplos
+### Princípio
 
-O componente deve possibilitar situações como:
-
-> “Quem escreveu *Clean Code*?”
-
-seguido de:
-
-> “E quando ele foi publicado?”
-
-ou:
-
-> “O livro está disponível?”
-
-seguido de:
-
-> “Então pode fazer o empréstimo.”
-
-O gerenciamento do contexto permite que essas referências sejam resolvidas quando houver informação suficiente para isso.
+O Gerenciador de Tarefa deve representar o estado necessário para a conclusão da tarefa sem depender diretamente das estruturas internas do domínio.
 
 ---
 
-# 3.4 Gerenciador de Tarefa
+# 6. Interface entre Núcleo Conversacional e Orquestrador de Ferramentas
 
-### Responsabilidade
+Esta é uma das principais fronteiras da arquitetura.
 
-Responsável por manter o estado da tarefa que está sendo realizada e pelas informações necessárias para sua conclusão.
+O Núcleo Conversacional não executa diretamente operações do domínio.
 
-Suas principais responsabilidades são:
+Quando determina que uma ferramenta é necessária, solicita ao Orquestrador a realização de uma operação.
 
-- registrar o objetivo corrente da interação;
-- identificar informações já determinadas;
-- identificar informações ainda necessárias;
-- acompanhar o progresso da tarefa;
-- identificar quando a informação disponível é suficiente para prosseguir;
-- solicitar, por meio do núcleo conversacional, informações ausentes;
-- manter o estado da tarefa durante múltiplas interações;
-- permitir correção ou atualização de informações durante a interação;
-- indicar quando a tarefa pode ser concluída.
+## 6.1 Solicitação de operação
 
-### Requisitos relacionados
-
-- RF03 — Gerenciar contexto conversacional
-- RF04 — Gerenciar informações necessárias à tarefa
-- RF09 — Tratar falhas e recuperar a interação
-
-### Observação
-
-O Gerenciador de Tarefa não deve conter regras específicas do domínio bibliotecário. Ele deve trabalhar com informações e estados necessários à tarefa sem depender diretamente das entidades concretas do domínio.
-
----
-
-# 3.5 Orquestrador de Ferramentas
-
-### Responsabilidade
-
-Responsável por coordenar o uso das ferramentas necessárias à execução das operações de domínio.
-
-Suas principais responsabilidades são:
-
-- determinar, a partir da solicitação e do estado da tarefa, se uma ferramenta é necessária;
-- selecionar uma ferramenta compatível;
-- preparar os parâmetros necessários;
-- validar os parâmetros antes da execução;
-- impedir chamadas quando os dados forem insuficientes ou inválidos;
-- solicitar a execução da ferramenta autorizada;
-- receber o resultado da execução;
-- comunicar o resultado ao núcleo conversacional;
-- tratar condições de falha relacionadas à execução.
-
-### Requisitos relacionados
-
-- RF05 — Selecionar ferramenta para execução da tarefa
-- RF06 — Preparar e validar chamada de ferramenta
-- RF07 — Executar ferramentas autorizadas
-- RF08 — Processar resultados das ferramentas
-- RF09 — Tratar falhas e recuperar a interação
-
-### Observação importante
-
-Este componente não define, neste momento, a granularidade das ferramentas.
-
-Por exemplo, ainda não se decide se o domínio será exposto por:
+Conceitualmente, uma solicitação contém:
 
 ```text
-consultar_livro()
-verificar_disponibilidade()
-realizar_emprestimo()
-realizar_devolucao()
+ToolRequest
+├── operação desejada
+├── informações necessárias
+├── parâmetros determinados
+├── contexto relevante
+└── requisitos da tarefa
 ```
 
-ou por ferramentas mais genéricas.
+O formato concreto ainda não é definido nesta etapa.
 
-Essa é uma decisão posterior de projeto arquitetural.
+## 6.2 Resultado da operação
 
----
-
-# 3.6 Registro e Interface de Ferramentas
-
-### Responsabilidade
-
-Responsável por disponibilizar ao sistema a descrição e os meios de acesso às ferramentas autorizadas.
-
-Suas principais responsabilidades são:
-
-- registrar ferramentas disponíveis;
-- disponibilizar suas descrições;
-- disponibilizar os parâmetros esperados;
-- identificar operações autorizadas;
-- fornecer uma interface uniforme para execução;
-- encaminhar chamadas para a implementação correspondente;
-- devolver os resultados das operações.
-
-### Requisitos relacionados
-
-- RF05 — Selecionar ferramenta para execução da tarefa
-- RF06 — Preparar e validar chamada de ferramenta
-- RF07 — Executar ferramentas autorizadas
-
-### Observação
-
-A separação entre o Orquestrador de Ferramentas e a Interface de Ferramentas é deliberada.
-
-O orquestrador decide:
-
-> **“Qual operação preciso realizar?”**
-
-Enquanto a interface de ferramentas fornece:
-
-> **“Quais operações estão disponíveis e como podem ser executadas?”**
-
-Isso favorece o desacoplamento entre o núcleo conversacional e o domínio.
-
----
-
-# 3.7 Adaptador do Sistema de Domínio
-
-### Responsabilidade
-
-Responsável por conectar as ferramentas disponibilizadas ao assistente às operações concretas do sistema de informação de domínio.
-
-Suas principais responsabilidades são:
-
-- traduzir chamadas de ferramentas para operações do sistema de domínio;
-- adaptar parâmetros entre as interfaces;
-- receber resultados do sistema de domínio;
-- adaptar os resultados para o formato esperado pelo assistente;
-- preservar as regras de negócio do sistema de domínio;
-- evitar que o núcleo conversacional dependa diretamente da implementação interna do sistema de domínio.
-
-### Requisitos relacionados
-
-Principalmente:
-
-- RF07 — Executar ferramentas autorizadas
-- RF08 — Processar resultados das ferramentas
-
-### Observação
-
-Este componente é particularmente importante para o requisito de desacoplamento do domínio.
-
-O núcleo conversacional não deve precisar conhecer diretamente estruturas internas como:
+O Orquestrador retorna ao Núcleo Conversacional:
 
 ```text
-Livro
-Usuario
-Emprestimo
-Exemplar
+ToolResult
+├── status da execução
+├── resultado da operação
+├── informações de erro, quando aplicável
+└── metadados relevantes
 ```
 
-nem detalhes de banco de dados, endpoints ou classes específicas do sistema bibliotecário.
+O núcleo utiliza esse resultado para:
+
+- atualizar o estado da tarefa;
+- atualizar o contexto;
+- determinar se a tarefa foi concluída;
+- solicitar informações adicionais;
+- realizar recuperação;
+- produzir a resposta ao usuário.
 
 ---
 
-# 3.8 Sistema de Informação de Domínio
+# 7. Responsabilidades do Orquestrador de Ferramentas
 
-### Responsabilidade
+O Orquestrador realiza as seguintes etapas lógicas:
 
-Representa o sistema responsável pelos dados e pelas regras próprias do domínio de aplicação.
+```text
+Solicitação do núcleo
+        ↓
+Determinação da operação
+        ↓
+Seleção da ferramenta
+        ↓
+Preparação dos parâmetros
+        ↓
+Validação
+        ↓
+Execução
+        ↓
+Recebimento do resultado
+        ↓
+Normalização do resultado
+        ↓
+Retorno ao núcleo
+```
 
-No estudo de caso atual, corresponde ao sistema de informação bibliotecário.
+O Orquestrador deve impedir que uma chamada seja executada quando:
 
-Suas responsabilidades incluem:
-
-- manter os dados do domínio;
-- executar operações de consulta;
-- executar operações de alteração;
-- aplicar regras de negócio;
-- validar condições específicas do domínio;
-- retornar os resultados das operações.
-
-### Exemplos de responsabilidades de domínio
-
-- determinar se um livro está disponível;
-- determinar se um usuário pode realizar um empréstimo;
-- registrar um empréstimo;
-- registrar uma devolução;
-- consultar empréstimos existentes.
-
-### Observação
-
-As regras de negócio devem permanecer neste nível sempre que forem próprias do domínio.
-
-Por exemplo:
-
-> “O usuário atingiu o limite de empréstimos.”
-
-é uma regra do domínio, não uma regra que deve ser codificada no núcleo conversacional.
+- a operação não puder ser determinada;
+- a ferramenta correspondente não estiver disponível;
+- parâmetros obrigatórios estiverem ausentes;
+- parâmetros forem incompatíveis com a operação;
+- os valores não atenderem às condições de validação estabelecidas.
 
 ---
 
-# 4. Relações entre componentes
+# 8. Interface de ferramentas
 
-As principais relações são:
+A arquitetura estabelece uma fronteira explícita entre o Orquestrador e as ferramentas disponíveis.
 
-| Origem | Destino | Responsabilidade da relação |
-|---|---|---|
-| Interface Conversacional | Núcleo Conversacional | Encaminhar solicitações e receber respostas |
-| Núcleo Conversacional | Gerenciador de Contexto | Consultar e atualizar contexto |
-| Núcleo Conversacional | Gerenciador de Tarefa | Manter estado e informações da tarefa |
-| Núcleo Conversacional | Orquestrador de Ferramentas | Solicitar execução de operações necessárias |
-| Orquestrador de Ferramentas | Registro/Interface de Ferramentas | Selecionar e executar ferramentas disponíveis |
-| Registro/Interface de Ferramentas | Adaptador de Domínio | Encaminhar operações para o domínio |
-| Adaptador de Domínio | Sistema de Informação de Domínio | Executar operações e obter resultados |
-| Sistema de Informação de Domínio | Adaptador de Domínio | Retornar dados e resultados de negócio |
-| Adaptador de Domínio | Registro/Interface de Ferramentas | Retornar resultado da ferramenta |
-| Orquestrador de Ferramentas | Núcleo Conversacional | Informar resultado da operação |
-| Núcleo Conversacional | Interface Conversacional | Entregar resposta ao usuário |
+Uma ferramenta deve possuir, conceitualmente:
+
+```text
+ToolDefinition
+├── identificador
+├── descrição
+├── operação disponibilizada
+├── parâmetros
+├── tipos/formato dos parâmetros
+├── parâmetros obrigatórios
+└── condições de utilização
+```
+
+A implementação concreta pode representar essas informações de outra maneira.
+
+O objetivo da abstração é permitir que o Orquestrador trabalhe com ferramentas sem depender diretamente de sua implementação interna.
 
 ---
 
-# 5. Fluxo arquitetural geral
+# 9. Execução de uma ferramenta
 
-Uma interação típica pode percorrer os componentes da seguinte maneira:
+A execução segue conceitualmente:
+
+```text
+Orquestrador
+     │
+     │ solicitação validada
+     ▼
+Interface de Ferramentas
+     │
+     │ chamada
+     ▼
+Ferramenta
+     │
+     ▼
+Adaptador de Domínio
+     │
+     ▼
+Sistema de Informação
+     │
+     │ resultado
+     ▼
+Adaptador
+     │
+     ▼
+Ferramenta
+     │
+     ▼
+Interface de Ferramentas
+     │
+     ▼
+Orquestrador
+```
+
+A ferramenta funciona como uma fronteira controlada para acesso às operações do domínio.
+
+---
+
+# 10. Contrato de resultado
+
+O resultado de uma ferramenta deve permitir distinguir pelo menos:
+
+### Sucesso
+
+A operação foi executada e seu resultado pôde ser determinado.
+
+### Falha de execução
+
+A operação foi solicitada, mas não pôde ser concluída.
+
+### Falha de validação
+
+A chamada não pôde ser executada porque seus parâmetros não eram válidos.
+
+### Resultado vazio
+
+A operação foi executada, mas não foram encontrados dados correspondentes.
+
+### Resultado inconclusivo
+
+A operação foi executada, mas seu resultado não permite determinar adequadamente a situação solicitada.
+
+Essa distinção é importante porque o Núcleo Conversacional não deve tratar todas essas situações como equivalentes.
+
+---
+
+# 11. Interface com o sistema de domínio
+
+O Adaptador de Domínio estabelece a fronteira entre as ferramentas e o sistema de informação utilizado pelo estudo de caso.
+
+Sua função é traduzir entre:
+
+```text
+Interface de ferramenta
+        ↕
+Formato de operação do domínio
+```
+
+Por exemplo, conceitualmente:
+
+```text
+Ferramenta:
+realizar empréstimo
+        ↓
+Adaptador:
+traduz parâmetros
+        ↓
+Sistema de domínio:
+registrar empréstimo
+        ↓
+Adaptador:
+normaliza resultado
+        ↓
+Ferramenta:
+resultado da operação
+```
+
+O núcleo conversacional não deve depender diretamente do formato interno dessa operação.
+
+---
+
+# 12. Regras de negócio
+
+As regras próprias do domínio devem ser avaliadas pelo Sistema de Informação de Domínio.
+
+Exemplos:
+
+- verificar se o recurso está disponível;
+- verificar se o usuário pode realizar um empréstimo;
+- verificar condições para devolução;
+- registrar alterações no estado do domínio.
+
+O assistente pode identificar e solicitar a operação, mas não deve substituir as regras de negócio do sistema de domínio.
+
+Assim:
+
+```text
+Usuário
+   ↓
+Assistente
+   ↓
+"realizar empréstimo"
+   ↓
+Sistema de domínio
+   ↓
+regra de negócio
+   ├── permitido
+   └── não permitido
+```
+
+---
+
+# 13. Fluxo completo de uma solicitação
+
+Considerando uma solicitação como:
+
+> “Quero pegar o livro Clean Code.”
+
+o fluxo lógico é:
 
 ```text
 1. Usuário
       │
-      │ solicitação de voz
       ▼
 2. Interface Conversacional
-      │
-      │ entrada processada
-      ▼
-3. Núcleo Conversacional
-      │
-      ├──── consulta ────► Gerenciador de Contexto
-      │
-      ├──── consulta ────► Gerenciador de Tarefa
-      │
-      ▼
-4. Orquestrador de Ferramentas
-      │
-      │ seleciona/prepara/valida
-      ▼
-5. Registro / Interface de Ferramentas
-      │
-      ▼
-6. Adaptador do Sistema de Domínio
-      │
-      ▼
-7. Sistema de Informação de Domínio
-      │
-      │ resultado
-      ▼
-6. Adaptador
-      │
-      ▼
-5. Interface de Ferramentas
-      │
-      ▼
-4. Orquestrador
       │
       ▼
 3. Núcleo Conversacional
       │
-      ├──── atualiza contexto/tarefa
+      ├── consulta contexto
+      │
+      ├── identifica objetivo
+      │
+      ├── identifica recurso
+      │
+      └── determina informações necessárias
       │
       ▼
-2. Interface Conversacional
+4. Gerenciador de Tarefa
       │
-      │ resposta por voz
+      └── informações suficientes
+      │
       ▼
-1. Usuário
+5. Orquestrador de Ferramentas
+      │
+      ├── determina operação
+      ├── seleciona ferramenta
+      ├── prepara parâmetros
+      └── valida chamada
+      │
+      ▼
+6. Ferramenta
+      │
+      ▼
+7. Adaptador de Domínio
+      │
+      ▼
+8. Sistema de Informação
+      │
+      ├── aplica regras de negócio
+      └── executa operação
+      │
+      ▼
+9. Resultado
+      │
+      ▼
+10. Núcleo Conversacional
+      │
+      ├── processa resultado
+      ├── atualiza tarefa
+      ├── atualiza contexto
+      └── gera resposta
+      │
+      ▼
+11. Interface Conversacional
+      │
+      ▼
+12. Usuário
 ```
 
 ---
 
-# 6. Princípios arquiteturais
+# 14. Fluxo de solicitação com informação ausente
 
-O modelo deve observar os seguintes princípios.
+Exemplo:
 
-## PA01 — Separação entre interação e domínio
+> “Quero fazer um empréstimo.”
 
-A interface conversacional e o núcleo conversacional não devem depender diretamente da implementação específica do sistema de informação de domínio.
+```text
+Usuário
+   ↓
+Núcleo Conversacional
+   ↓
+Gerenciador de Tarefa
+   ↓
+Informação necessária ausente
+   ↓
+Núcleo Conversacional
+   ↓
+"Qual livro você deseja emprestar?"
+   ↓
+Usuário
+   ↓
+Núcleo Conversacional
+   ↓
+Gerenciador de Tarefa
+   ↓
+Informações suficientes
+   ↓
+Orquestrador
+   ↓
+Ferramenta
+   ↓
+Domínio
+```
 
-## PA02 — Desacoplamento do núcleo conversacional
+O ponto importante é:
 
-O núcleo do assistente deve poder operar com diferentes domínios desde que estes disponibilizem ferramentas compatíveis com a interface estabelecida.
+> **a ausência de informação interrompe a execução da operação, mas não necessariamente encerra a tarefa.**
 
-## PA03 — Ferramentas como fronteira de integração
-
-As ferramentas constituem a principal fronteira entre o assistente e as operações do domínio.
-
-## PA04 — Regras de negócio no domínio
-
-Regras próprias do domínio devem permanecer no sistema de informação de domínio, e não no núcleo conversacional.
-
-## PA05 — Validação antes da execução
-
-Chamadas de ferramentas devem ser validadas antes de sua execução.
-
-## PA06 — Execução somente com informação suficiente
-
-O sistema não deve executar uma operação quando não houver informações suficientes para determinar a operação e seus parâmetros.
-
-## PA07 — Fidelidade aos resultados
-
-O núcleo conversacional deve basear suas respostas nos resultados efetivamente obtidos das ferramentas e do sistema de domínio.
-
-## PA08 — Recuperação da interação
-
-Falhas corrigíveis devem permitir a continuidade da tarefa sempre que possível.
-
-## PA09 — Observabilidade
-
-Os componentes devem permitir registrar informações suficientes para compreender o fluxo de execução e posteriormente verificar o comportamento do sistema.
-
-## PA10 — Independência tecnológica
-
-As responsabilidades arquiteturais não devem depender de uma tecnologia específica de LLM, reconhecimento de voz, síntese de voz, framework de agentes ou protocolo de ferramentas.
+Isso materializa arquiteturalmente o RF04 e o RF09.
 
 ---
 
-# 7. Mapeamento dos componentes aos requisitos
+# 15. Fluxo de falha de execução
 
-| Componente | Principais RFs |
+Quando a ferramenta não consegue executar uma operação:
+
+```text
+Orquestrador
+      ↓
+Ferramenta
+      ↓
+Falha
+      ↓
+Resultado de falha
+      ↓
+Orquestrador
+      ↓
+Núcleo Conversacional
+      ↓
+Gerenciador de Tarefa
+      ↓
+Recuperação possível?
+     / \
+   sim  não
+   ↓     ↓
+continuar  informar falha
+```
+
+Quando a recuperação for possível, o sistema pode solicitar novas informações ou permitir nova tentativa.
+
+Quando não for possível, o sistema informa a falha ao usuário.
+
+Em ambos os casos:
+
+> **o sistema não deve afirmar que a operação foi realizada se a execução não tiver sido confirmada.**
+
+---
+
+# 16. Fluxo de confirmação
+
+Quando uma operação exigir confirmação:
+
+```text
+Núcleo Conversacional
+        ↓
+Tarefa determinada
+        ↓
+Necessidade de confirmação
+        ↓
+Interface Conversacional
+        ↓
+Usuário
+     /      \
+confirmar   cancelar
+   ↓           ↓
+Orquestrador   encerra
+   ↓
+Ferramenta
+   ↓
+Domínio
+```
+
+A confirmação é uma propriedade da interação e não deve ser confundida com a validação das regras de negócio do domínio.
+
+---
+
+# 17. Isolamento do domínio
+
+O núcleo do sistema deve depender de uma abstração de ferramentas, e não diretamente das operações concretas do sistema bibliotecário.
+
+Conceitualmente:
+
+```text
+                 ┌─────────────────────┐
+                 │ Núcleo Conversacional│
+                 └──────────┬──────────┘
+                            │
+                     abstração de
+                       ferramentas
+                            │
+             ┌──────────────┴──────────────┐
+             │                             │
+             ▼                             ▼
+     Domínio bibliotecário           Outro domínio
+             │                             │
+             ▼                             ▼
+       ferramentas                   ferramentas
+```
+
+Assim, o domínio bibliotecário constitui um **estudo de caso da arquitetura**, e não uma dependência estrutural do núcleo conversacional.
+
+---
+
+# 18. Granularidade das ferramentas
+
+A arquitetura não fixa uma única estratégia para a granularidade das ferramentas.
+
+Podem existir ferramentas específicas:
+
+```text
+consultar_livro
+verificar_disponibilidade
+realizar_emprestimo
+realizar_devolucao
+```
+
+ou ferramentas mais abrangentes:
+
+```text
+consultar_catalogo
+consultar_emprestimos
+executar_operacao_de_acervo
+```
+
+A decisão deve considerar:
+
+- clareza das operações;
+- facilidade de validação;
+- segurança da execução;
+- quantidade de parâmetros;
+- capacidade de seleção correta;
+- possibilidade de reutilização;
+- complexidade do domínio;
+- comportamento do mecanismo de Tool Calling.
+
+Essa decisão pertence ao refinamento arquitetural e à implementação.
+
+---
+
+# 19. Observabilidade
+
+A arquitetura deve permitir acompanhar o ciclo de execução de uma tarefa.
+
+Devem ser considerados, conceitualmente, eventos como:
+
+- entrada recebida;
+- solicitação interpretada;
+- contexto utilizado;
+- informações identificadas;
+- informações faltantes;
+- ferramenta selecionada;
+- parâmetros preparados;
+- validação realizada;
+- ferramenta executada;
+- resultado obtido;
+- falha ocorrida;
+- recuperação realizada;
+- resposta produzida.
+
+Essas informações não precisam ser expostas ao usuário, mas devem estar disponíveis para análise do funcionamento do protótipo.
+
+A observabilidade constitui uma condição importante para os cenários de verificação e para eventual avaliação futura.
+
+---
+
+# 20. Mapeamento refinado de responsabilidades
+
+| Componente | Responsabilidades principais |
 |---|---|
-| Interface Conversacional | RF01, RF10, RF11, RF12 |
-| Núcleo Conversacional | RF02, RF03, RF04, RF08, RF09, RF11 |
-| Gerenciador de Contexto | RF03, RF04 |
-| Gerenciador de Tarefa | RF03, RF04, RF09 |
-| Orquestrador de Ferramentas | RF05, RF06, RF07, RF08, RF09 |
-| Registro/Interface de Ferramentas | RF05, RF06, RF07 |
-| Adaptador do Sistema de Domínio | RF07, RF08 |
-| Sistema de Informação de Domínio | Operações e regras próprias do domínio |
+| **Interface Conversacional** | Entrada e saída por voz; controle da interação |
+| **Núcleo Conversacional** | Interpretação; coordenação; geração da resposta |
+| **Gerenciador de Contexto** | Armazenamento e recuperação de informações contextuais |
+| **Gerenciador de Tarefa** | Estado da tarefa; informações necessárias; progresso e recuperação |
+| **Orquestrador de Ferramentas** | Seleção; preparação; validação; execução e tratamento do resultado |
+| **Registro/Interface de Ferramentas** | Descrição, disponibilidade e acesso às ferramentas |
+| **Adaptador de Domínio** | Tradução entre ferramentas e sistema de domínio |
+| **Sistema de Informação de Domínio** | Dados e regras de negócio |
 
 ---
 
-# 8. Relação com os casos de uso
+# 21. Interfaces e responsabilidades — resumo
 
-Os componentes não correspondem diretamente aos casos de uso.
-
-Os cinco casos de uso utilizam diferentes combinações dos mesmos componentes:
-
-| Caso de uso | Componentes principais envolvidos |
-|---|---|
-| **UC01 — Consultar informações** | Interface, Núcleo Conversacional, Contexto, Tarefa, Orquestrador, Ferramentas, Domínio |
-| **UC02 — Consultar disponibilidade** | Interface, Núcleo Conversacional, Contexto, Tarefa, Orquestrador, Ferramentas, Domínio |
-| **UC03 — Realizar empréstimo** | Interface, Núcleo Conversacional, Contexto, Tarefa, Orquestrador, Ferramentas, Domínio |
-| **UC04 — Realizar devolução** | Interface, Núcleo Conversacional, Contexto, Tarefa, Orquestrador, Ferramentas, Domínio |
-| **UC05 — Consultar empréstimos** | Interface, Núcleo Conversacional, Contexto, Tarefa, Orquestrador, Ferramentas, Domínio |
-
-Isso reforça a distinção entre:
-
-**Caso de uso:** objetivo do usuário.
-
-**Componente:** responsabilidade arquitetural.
-
-Um mesmo componente pode participar de vários casos de uso.
+```text
+┌───────────────────────┐
+│ Interface             │
+│ Conversacional        │
+└───────────┬───────────┘
+            │ interação
+            ▼
+┌───────────────────────┐
+│ Núcleo                │
+│ Conversacional        │
+└──────┬─────────┬──────┘
+       │         │
+       │         ├───────────────┐
+       ▼         ▼               │
+┌────────────┐ ┌──────────────┐  │
+│ Contexto   │ │ Tarefa       │  │
+└────────────┘ └──────────────┘  │
+                                 │ operação
+                                 ▼
+                       ┌──────────────────┐
+                       │ Orquestrador     │
+                       │ de Ferramentas   │
+                       └────────┬─────────┘
+                                │
+                                ▼
+                       ┌──────────────────┐
+                       │ Interface de     │
+                       │ Ferramentas      │
+                       └────────┬─────────┘
+                                │
+                                ▼
+                       ┌──────────────────┐
+                       │ Adaptador de     │
+                       │ Domínio          │
+                       └────────┬─────────┘
+                                │
+                                ▼
+                       ┌──────────────────┐
+                       │ Sistema de       │
+                       │ Informação       │
+                       └──────────────────┘
+```
 
 ---
 
-# 9. Decisões ainda não definidas
+# 22. Decisões mantidas em aberto
 
-Este modelo deliberadamente não define algumas decisões que deverão ser tomadas na próxima etapa de projeto, entre elas:
+A versão 1.1 ainda não determina:
 
 - tecnologia de reconhecimento de voz;
 - tecnologia de síntese de voz;
-- modelo ou fornecedor de LLM;
-- mecanismo específico de Tool Calling;
-- formato concreto das definições de ferramentas;
-- granularidade das ferramentas;
-- protocolo de comunicação entre ferramentas e domínio;
-- mecanismo de persistência do contexto;
-- mecanismo de observabilidade;
-- infraestrutura de execução;
-- sistema bibliotecário concreto utilizado no estudo de caso.
+- modelo de linguagem;
+- estratégia de prompting;
+- framework de agente;
+- protocolo específico de ferramentas;
+- formato concreto de `ToolRequest` e `ToolResult`;
+- persistência do contexto;
+- mecanismo de autenticação;
+- infraestrutura;
+- tecnologia do sistema de domínio;
+- granularidade definitiva das ferramentas.
 
-Essas decisões deverão ser derivadas dos requisitos, restrições e objetivos do projeto, e não fazem parte deste modelo lógico inicial.
+Essas decisões deverão ser tomadas durante o detalhamento do projeto, mantendo rastreabilidade com os requisitos e as responsabilidades arquiteturais estabelecidas neste documento.
 
 ---
 
-# 10. Rastreabilidade arquitetural
+# 23. Rastreabilidade
 
-A arquitetura deve manter a seguinte relação de rastreabilidade:
+A evolução arquitetural deve preservar a seguinte cadeia:
 
-```text
-Literatura / Diretrizes
-        ↓
-Requisitos
-        ↓
-Casos de Uso
-        ↓
-Cenários de Verificação
-        ↓
-Responsabilidades Arquiteturais
-        ↓
-Componentes
-        ↓
-Implementação
-```
+**Literatura / Diretrizes → Requisitos → Casos de Uso → Cenários de Verificação → Responsabilidades → Componentes → Interfaces → Implementação**
 
-Dessa forma, cada componente arquitetural deve possuir uma responsabilidade justificável a partir dos requisitos e casos de uso, e posteriormente deverá ser possível verificar se seu comportamento contribui para os cenários definidos.
+Cada decisão arquitetural relevante deverá ser justificável por pelo menos um requisito, caso de uso, cenário de verificação ou restrição do projeto.
+
+---
+
+# 24. Estado do modelo
+
+Esta versão representa o **modelo arquitetural refinado**, suficiente para orientar a definição das interfaces e responsabilidades de implementação, mas ainda independente de tecnologias concretas.
+
+A próxima etapa deverá detalhar as decisões de projeto necessárias para transformar este modelo lógico em uma arquitetura implementável.
