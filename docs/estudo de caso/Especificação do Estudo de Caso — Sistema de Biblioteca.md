@@ -2,7 +2,7 @@
 
 **Projeto:** TCC — Assistente Conversacional por Voz para Interação com Sistemas de Informação
 
-**Versão:** 0.2 | **Status:** Em elaboração | **Data:** 2026-11-14
+**Versão:** 0.3 | **Status:** Em elaboração | **Data:** 2026-11-14
 
 ## 1. Identificação e propósito
 
@@ -17,7 +17,7 @@ O documento descreve o domínio (entidades, regras e operações). Decisões de 
 | Documento | Relação |
 | --- | --- |
 | Documento de Visão (v1.1) | Define o problema e o escopo geral; este documento detalha o estudo de caso. |
-| Requisitos Funcionais Consolidados (v1.0) | Os requisitos serão associados às operações e aos casos de uso deste documento na próxima revisão. |
+| Requisitos do Sistema (v2.0) | Os requisitos são verificados pelos casos de teste e pelos cenários conversacionais deste documento (seções 10.4 e 10.5). |
 | Modelo de Arquitetura (v1.2) | O mapeamento de ferramentas e o catálogo de erros (seções 6 e 7) alimentam a revisão da arquitetura. |
 
 ### 1.3 Escopo
@@ -189,7 +189,7 @@ As categorias abaixo são provisórias e serão mapeadas para os status do resul
 | UC04 | Emprestar livro | OP01, OP03 | Variantes: ambiguidade de título; recusa por regra (RN02 a RN05); desistência na confirmação. |
 | UC05 | Devolver livro | OP02, OP04 | Variantes: empréstimo não encontrado; já devolvido; devolução em atraso. |
 
-Comportamentos conversacionais transversais (correção de informação, cancelamento, continuidade pelo contexto e falha técnica) são tratados nos requisitos e aplicam-se a esses casos de uso. A especificação detalhada (fluxo principal, alternativos e de exceção) ficará em documento próprio.
+Comportamentos conversacionais transversais (correção de informação, cancelamento, continuidade pelo contexto e falha técnica) são tratados nos requisitos e aplicam-se a esses casos de uso; seus cenários de verificação estão na seção 10.5. A especificação detalhada (fluxo principal, alternativos e de exceção) ficará em documento próprio.
 
 ## 10. Dados de exemplo para testes
 
@@ -254,6 +254,43 @@ Comportamentos conversacionais transversais (correção de informação, cancela
 
 Os casos CT-17 e CT-18 exigem injeção de falhas no serviço de domínio.
 
+### 10.5 Cenários conversacionais
+
+Os cenários conversacionais verificam o comportamento do assistente em diálogos de vários turnos. Usam a base desta seção e a data de referência 2026-11-09, e cada um parte da base restaurada. As falas são exemplos: formulações equivalentes são aceitas. Em todos os cenários valem as regras gerais: os dados citados coincidem com os retornados pelas ferramentas (RF11 CA2) e nenhuma operação de escrita é executada sem confirmação (RF10 CA1). A coluna Requisitos refere-se ao documento Requisitos do Sistema (v2.0).
+
+| ID | Usuário | Falas do usuário (resumo) | Comportamento esperado | Requisitos |
+| --- | --- | --- | --- | --- |
+| CC-01 | U03 | “Tem Dom Casmurro?” | Consulta o acervo e informa que o livro existe, com 2 exemplares disponíveis. Não pede confirmação. | RF02, RF05 a RF08, RF11, RF12 |
+| CC-02 | U03 | “Tem Dom Casmurro?” e depois “Então me empresta esse.” | Resolve “esse” pelo contexto (L03), sem pedir o título de novo, e segue para a confirmação do empréstimo. | RF03 CA1 e CA2 |
+| CC-03 | U03 | Três formulações: “Tem Dom Casmurro?”, “Vocês possuem o livro Dom Casmurro?”, “Quero saber se há Dom Casmurro.” | A mesma ferramenta e os mesmos parâmetros são usados nas três formulações. | RF02 CA2 |
+| CC-04 | U03 | “Quero pegar Dom Casmurro emprestado.” e depois “Sim.” | Identifica L03, pede confirmação citando título e autor e, após o “sim”, registra o empréstimo e informa o prazo (23 de novembro). L03 passa a 1 disponível. | RF04, RF10 CA1 a CA3, RF11, RF12 CA2 (CT-07) |
+| CC-05 | U03 | “Quero pegar um livro emprestado.” e depois “Dom Casmurro.” | Pergunta qual livro; ao receber o título, segue como em CC-04. Nenhuma ferramenta é executada antes de ter o título. | RF04 CA2 e CA4 |
+| CC-06 | U03 | “Quero o Dom Casmurro do Machado de Assis.” | Extrai título e autor da mesma fala, sem perguntar de novo, e encontra L03. | RF04 CA1 |
+| CC-07 | U03 | “Quero pegar Engenharia de Software.” e depois “O segundo.” | Apresenta os 2 candidatos (L06 e L07) e pede a escolha; resolve “o segundo” como L07 (na ordem apresentada) e segue para a confirmação. | RF03 CA2, RF04 CA3 (CT-03) |
+| CC-08 | U03 | “Tem algo do Machado de Assis?” e depois “Me empresta o primeiro.” | Apresenta os 2 livros (L03 e L04); “o primeiro” resolve para o primeiro apresentado e segue para a confirmação. | RF03 CA2, RF04 CA3 (CT-02) |
+| CC-09 | U03 | Pedido de Dom Casmurro e, na confirmação, “Não.” | Cancela e informa que nada foi registrado. Nenhum empréstimo é criado e o estoque não muda. | RF10 CA4 |
+| CC-10 | U03 | Pedido de Dom Casmurro e, na confirmação, “Não, o Memórias Póstumas.” | Entende como correção: troca o livro para L04 e pede nova confirmação, sem reiniciar a tarefa. | RF09 CA4, RF10 CA4 |
+| CC-11 | U03 | Pedido de Dom Casmurro e, na confirmação, “Esquece, cancela.” | Cancela a operação pendente sem executá-la. | RF10 CA5 |
+| CC-12 | U01 | “Quero pegar Memórias Póstumas.” e depois “Sim.” | Após a confirmação, a operação é recusada por limite; o assistente informa o limite de 3 e sugere devolver um livro. Não repete a chamada. | RF08 CA3 (CT-09) |
+| CC-13 | U02 | “Quero pegar O Hobbit.” e depois “Sim.” | Recusa por carência; informa que poderá pegar o livro de novo a partir de 16 de novembro. | RF08 CA3, RF12 CA2 (CT-11) |
+| CC-14 | U03 | “Quero pegar Clean Architecture.” | Informa que não há exemplares disponíveis (antes ou depois da confirmação). Nenhum empréstimo é criado. | RF08 CA3 (CT-08) |
+| CC-15 | U04 | “Quais livros eu tenho emprestados?” | Informa o empréstimo ativo (Clean Code), em atraso há 6 dias, com prazo original em 3 de novembro. | RF08, RF12 CA2 (UC03) |
+| CC-16 | U04 | “Quero devolver o Clean Code.” e depois “Sim.” | Localiza o empréstimo do usuário pela consulta de empréstimos, pede confirmação, registra a devolução e informa o atraso de 6 dias e que o livro poderá ser pego de novo a partir de 23 de novembro. | RF03, RF07, RF10, RF11, RF12 CA2 (CT-12) |
+| CC-17 | U03 | “Quero devolver o Clean Code.” | Não encontra empréstimo ativo desse livro para o usuário e informa isso. Nenhuma devolução é registrada. | RF08 CA2, RF09 (ver CT-13) |
+| CC-18 | U03 | “Quero renovar meu empréstimo.” | Informa que não pode realizar a operação e indica o que pode fazer (consultar livros e empréstimos, emprestar e devolver). Nenhuma ferramenta é executada. | RF05 CA2 |
+| CC-19 | U03 | “Quais livros a Ana tem emprestados?” | Informa que só pode consultar os empréstimos do próprio usuário. Dados de outro usuário não são consultados nem revelados. | RF05 CA2, RNF06 |
+| CC-20 | U03 | “Sim.” sem confirmação pendente | Não executa nada e pergunta o que o usuário deseja. | RF02 CA3 |
+| CC-21 | U03 | “Tem algo do Machado de Assis?” com o serviço de domínio indisponível | Informa que houve um problema técnico, não inventa resultados e oferece nova tentativa. | RF09 CA2, RNF04, RNF09 (CT-17) |
+| CC-22 | U03 | Pedido de Dom Casmurro e “Sim.”, com timeout simulado na gravação | Verifica o estado pela consulta de empréstimos antes de responder: (a) se o empréstimo foi registrado, informa o sucesso; (b) se não foi, informa que não foi concluído e oferece nova tentativa. Não afirma sucesso sem verificar. | RF09 CA3, RNF04 (CT-18) |
+| CC-23 | U03 | Fala com transcrição de baixa confiança (por exemplo, “Clean Code” transcrito de forma duvidosa) | Confirma o título com o usuário (“Você disse Clean Code?”) antes de usá-lo. | RF13 CA2 |
+| CC-24 | U03 | Duas falas consecutivas não compreendidas ou vazias | Pede que repita na primeira vez e, na segunda, orienta a reformular (por exemplo, falar mais devagar). Nenhuma operação é executada. | RF01 CA2, RF13 CA1 e CA3 |
+| CC-25 | U03 | “Tem Dom Casmurro?” e depois “Repita.” | Reproduz novamente a última resposta, sem consultar o acervo de novo. | RF14 CA1 (Should) |
+| CC-26 | U03 | Interrompe a leitura de uma lista de candidatos | A reprodução para e a nova fala é processada. | RF14 CA2 (Could) |
+| CC-27 | U03 | Silêncio após uma pergunta do assistente | Repete a pergunta uma vez e, persistindo o silêncio, encerra a sessão. | RF14 CA3 (Could) |
+| CC-28 | U03 | “Pode encerrar.” | Despede-se, encerra a sessão e descarta o contexto; uma nova conversa não retém informações da anterior. | RF10 CA6, RF03 CA4 |
+
+Os cenários CC-21 e CC-22 exigem injeção de falhas no serviço de domínio, e os cenários CC-23 a CC-27 exigem a camada de voz ou a simulação de seus eventos (confiança baixa, silêncio, interrupção). Os demais podem ser executados com entrada em texto (RNF12). Os cenários CC-26 e CC-27 correspondem a requisitos de prioridade Could.
+
 ## 11. Rastreabilidade (preliminar)
 
 | Operação | Ferramenta | Regras | Erros e resultados | Casos de uso | Casos de teste |
@@ -263,7 +300,7 @@ Os casos CT-17 e CT-18 exigem injeção de falhas no serviço de domínio.
 | OP03 | registrar\_emprestimo | RN01 a RN05 | LIVRO\_NAO\_ENCONTRADO, EMPRESTIMO\_ATIVO\_MESMO\_LIVRO, CARENCIA\_EM\_VIGOR, LIMITE\_EMPRESTIMOS\_ATINGIDO, LIVRO\_INDISPONIVEL, RESULTADO\_INCERTO | UC04 | CT-07 a CT-11, CT-15, CT-18 |
 | OP04 | registrar\_devolucao | RN03, RN04, RN06, RN07, RN08 | EMPRESTIMO\_NAO\_ENCONTRADO, EMPRESTIMO\_JA\_DEVOLVIDO, RESULTADO\_INCERTO | UC05 | CT-12 a CT-14 |
 
-O resultado SERVICO\_INDISPONIVEL se aplica a todas as operações (CT-17). A coluna de requisitos funcionais será acrescentada após a revisão do documento de requisitos.
+O resultado SERVICO\_INDISPONIVEL se aplica a todas as operações (CT-17). A rastreabilidade com os requisitos funcionais está na seção 10.5 (coluna Requisitos) e no documento Requisitos do Sistema (seção 6.1).
 
 ## 12. Decisões, questões em aberto e glossário
 
@@ -301,3 +338,4 @@ Nenhuma questão em aberto nesta versão. As questões Q-01 a Q-05 da versão 0.
 | --- | --- | --- |
 | 0.1 | 2026-11-09 | Versão inicial. |
 | 0.2 | 2026-11-14 | Remoção da operação de verificação de disponibilidade e renumeração das operações (OP01 a OP04); resolução das questões em aberto; inclusão de melhorias futuras. |
+| 0.3 | 2026-11-14 | Inclusão dos cenários conversacionais (seção 10.5, CC-01 a CC-28) e alinhamento com o documento Requisitos do Sistema v2.0. |
