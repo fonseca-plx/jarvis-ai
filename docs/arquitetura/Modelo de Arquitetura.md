@@ -1,24 +1,26 @@
 # Modelo de Arquitetura do Sistema
 
-**Projeto:** Assistente Conversacional por Voz com Uso de Ferramentas  
-**Versão:** 1.2  
-**Finalidade:** Definir a estrutura lógica do sistema, as responsabilidades de seus componentes, suas interfaces e o contrato de interação com ferramentas externas ao núcleo conversacional.
+**Versão:** 1.3 (rascunho) | **Status:** Em elaboração | **Data:** 2026-11-14
 
----
+**Finalidade:** definir a estrutura lógica do sistema, as responsabilidades de seus componentes, suas interfaces e o contrato de interação com ferramentas externas ao núcleo conversacional.
 
 ## 1. Objetivo
 
-O modelo de arquitetura define a organização lógica do assistente conversacional baseado em voz e LLM, estabelecendo os principais componentes do sistema, suas responsabilidades, interfaces e relações.
+O modelo de arquitetura define a organização lógica do assistente conversacional baseado em voz e LLM, estabelecendo os principais componentes, suas responsabilidades, interfaces e relações.
 
-A arquitetura deve permitir que o núcleo conversacional seja desacoplado do domínio de aplicação, possibilitando que diferentes sistemas de informação sejam integrados por meio de ferramentas explicitamente disponibilizadas ao assistente.
+A arquitetura deve permitir que o núcleo conversacional seja desacoplado do domínio de aplicação, de modo que diferentes sistemas de informação possam ser integrados por meio de ferramentas explicitamente disponibilizadas ao assistente.
 
-Neste modelo, a LLM é utilizada como parte do mecanismo de interpretação e geração de linguagem, mas não possui acesso direto ao sistema de informação de domínio. O acesso a operações externas ocorre por meio de uma camada controlada de ferramentas.
+A LLM faz parte do mecanismo de interpretação e geração de linguagem, mas não tem acesso direto ao sistema de domínio nem decide sozinha a execução de operações. O acesso a operações externas ocorre por uma camada controlada de ferramentas.
 
-A arquitetura permanece, nesta versão, **independente de tecnologias específicas de implementação**.
+A arquitetura permanece **independente de tecnologias específicas de implementação**. Os exemplos usam o estudo de caso da biblioteca apenas para ilustrar os contratos.
 
----
+| Documento | Versão | Relação |
+| --- | --- | --- |
+| Documento de Visão | 1.1 | Problema, escopo e princípios de projeto. |
+| Requisitos do Sistema | 2.1 | RF01 a RF14 e RNF01 a RNF12, citados neste modelo. |
+| Especificação do Estudo de Caso | 0.3 | Operações, regras, erros, casos de teste (CT) e cenários conversacionais (CC). |
 
-# 2. Visão geral da arquitetura
+## 2. Visão geral da arquitetura
 
 A arquitetura lógica é composta pelos seguintes elementos:
 
@@ -30,655 +32,501 @@ A arquitetura lógica é composta pelos seguintes elementos:
 6. **Registro e Interface de Ferramentas**
 7. **Adaptador do Sistema de Domínio**
 8. **Sistema de Informação de Domínio**
+9. **Registro de Eventos** (transversal)
 
-A organização geral pode ser representada da seguinte forma:
+O reconhecimento de fala, a síntese de voz e o modelo de linguagem são serviços externos acessados por **portas** (interfaces), o que permite substituí-los (RNF02).
 
 ```text
-┌──────────────────────────────────────────────┐
-│             Interface Conversacional         │
-│          Entrada e saída por voz             │
-└──────────────────────┬───────────────────────┘
-                       │
-                       ▼
-┌──────────────────────────────────────────────┐
-│              Núcleo Conversacional           │
-│                                              │
-│ Interpretação • Intenção • Contexto •        │
-│ Informações • Ambiguidade • Resposta         │
-└───────┬──────────────────────────┬───────────┘
-        │                          │
-        ▼                          ▼
-┌───────────────┐          ┌───────────────────┐
-│ Gerenciador   │          │ Gerenciador de    │
-│ de Contexto   │          │ Tarefa            │
-└───────────────┘          └───────────────────┘
-                                     
-                       │
-                       ▼
-             ┌───────────────────────┐
-             │ Orquestrador de       │
-             │ Ferramentas           │
-             └───────────┬───────────┘
-                         │
-                         ▼
-             ┌───────────────────────┐
-             │ Registro / Interface  │
-             │ de Ferramentas        │
-             └───────────┬───────────┘
-                         │
-                         ▼
-             ┌───────────────────────┐
-             │ Adaptador do Sistema  │
-             │ de Domínio            │
-             └───────────┬───────────┘
-                         │
-                         ▼
-             ┌───────────────────────┐
-             │ Sistema de Informação │
-             │ de Domínio            │
-             └───────────────────────┘
+                   ┌─────────────────────────────┐
+ Usuário ◄─ voz ─► │ Interface Conversacional    │
+                   │ portas: STT e TTS           │
+                   └──────────────┬──────────────┘
+                                  ▼
+┌───────────────┐  ┌─────────────────────────────┐  ┌───────────────┐
+│ Gerenciador   │  │ Núcleo Conversacional       │  │ Gerenciador   │
+│ de Contexto   │◄►│ Interpretação               │◄►│ de Tarefa     │
+│ conversa e    │  │ Política de diálogo         │  │ estado, faltas│
+│ sessão        │  │ Resposta + guarda           │  │ confirmação   │
+└───────────────┘  │ porta de linguagem (LLM)    │  └───────────────┘
+                   └──────────────┬──────────────┘
+                                  │ ToolRequest (proposta)
+                                  ▼
+                   ┌─────────────────────────────┐
+                   │ Orquestrador de Ferramentas │
+                   │ valida • autoriza • executa │
+                   └──────────────┬──────────────┘
+                                  ▼
+                   ┌─────────────────────────────┐
+                   │ Registro / Interface de     │
+                   │ Ferramentas                 │
+                   └──────────────┬──────────────┘
+                                  ▼
+                   ┌─────────────────────────────┐
+                   │ Adaptador do Sistema de     │
+                   │ Domínio                     │
+                   └──────────────┬──────────────┘
+                                  ▼
+                   ┌─────────────────────────────┐
+                   │ Sistema de Informação de    │
+                   │ Domínio                     │
+                   └─────────────────────────────┘
 ```
 
-O **Gerenciador de Contexto** e o **Gerenciador de Tarefa** são apresentados como responsabilidades lógicas distintas. Isso não implica que devam necessariamente constituir componentes físicos independentes na implementação.
+O Orquestrador lê a identidade do usuário no contexto de sessão, que pertence ao Gerenciador de Contexto. O **Registro de Eventos** recebe eventos de todos os componentes (seção 14).
 
----
+O Gerenciador de Contexto e o Gerenciador de Tarefa são responsabilidades lógicas distintas. Isso não implica que sejam componentes físicos independentes na implementação.
 
-# 3. Componentes e responsabilidades
+## 3. Componentes e responsabilidades
 
-## 3.1 Interface Conversacional
+### 3.1 Interface Conversacional
 
 Responsável pela interação direta com o usuário.
 
-### Responsabilidades
+**Responsabilidades**
 
-- receber a entrada de voz;
-- encaminhar a entrada para processamento conversacional;
-- receber a resposta textual produzida pelo sistema;
-- realizar a conversão da resposta para voz;
-- reproduzir a resposta ao usuário;
-- controlar aspectos da interação, como interrupção, cancelamento e encerramento, quando aplicável.
+- capturar a fala e obtê-la como texto por meio da **porta de reconhecimento de fala**, entregando ao núcleo o texto, a confiança da transcrição (quando o provedor a fornece) e um indicador de qualidade: transcrição normal, sem fala ou ininteligível (RF01, RF13);
+- converter a resposta textual em voz por meio da **porta de síntese de voz** e reproduzi-la (RF12);
+- detectar eventos de interação: interrupção da reprodução pelo usuário, silêncio prolongado após uma pergunta e encerramento (RF14);
+- reproduzir novamente a última resposta quando o núcleo o solicitar (RF14);
+- tratar falhas e lentidão dos serviços de voz com tempo-limite e mensagem controlada (RNF09);
+- não armazenar o áudio bruto após a transcrição (RNF10).
 
-A interface não deve conter regras específicas do domínio.
+A interface não contém regras do domínio nem interpreta a intenção do usuário.
 
----
+### 3.2 Núcleo Conversacional
 
-## 3.2 Núcleo Conversacional
+Principal componente de processamento da interação em linguagem natural. Reúne três responsabilidades internas:
 
-Constitui o principal componente responsável pelo processamento da interação em linguagem natural.
+**Interpretação**
 
-### Responsabilidades
+- identificar a intenção (inclusive os comandos de controle: confirmar, negar, cancelar, repetir, encerrar) e extrair os parâmetros da fala (RF02, RF04);
+- usar o contexto conversacional e o estado da tarefa para interpretar a fala (por exemplo, um “sim” só é confirmação se houver confirmação pendente);
+- resolver referências (“esse”, “o segundo”) com apoio do Gerenciador de Contexto (RF03).
 
-- interpretar a solicitação do usuário;
-- identificar intenção e informações relevantes;
-- utilizar informações do contexto conversacional;
-- identificar informações ausentes;
-- solicitar informações adicionais;
-- identificar ambiguidades;
-- solicitar esclarecimentos;
-- determinar a operação necessária para atingir o objetivo da interação;
-- solicitar a execução de ferramentas;
-- interpretar os resultados retornados;
-- determinar o próximo passo da interação;
-- produzir a resposta textual ao usuário.
+**Política de diálogo**
 
-A LLM pode participar dessas atividades, especialmente na interpretação, geração de argumentos, interpretação de resultados e geração da resposta.
+Decide o próximo passo da interação a partir do estado da tarefa e do último resultado: pedir informação faltante, apresentar candidatos e pedir escolha, pedir confirmação, propor uma chamada de ferramenta, tratar um resultado, recuperar de uma falha, verificar um estado ou encerrar. Esta responsabilidade é conduzida por software (a máquina de estados da seção 12); a LLM apoia a interpretação e a redação, mas não define sozinha as transições.
 
-Entretanto, operações críticas de controle — como validação, autorização e execução de ferramentas — não devem depender exclusivamente da saída da LLM.
+**Geração de resposta**
 
----
+Produz a resposta textual a partir do tipo de resposta decidido pela política (pedido de informação, confirmação, resultado, recusa, falha, encerramento) e dos fatos retornados pelas ferramentas, sob a guarda de fidelidade da seção 16 (RF11).
 
-## 3.3 Gerenciador de Contexto
+**Resolução de entidades.** Quando uma consulta retorna mais de um candidato, o Núcleo trata a ambiguidade: apresenta os candidatos em quantidade limitada por vez, registra no Gerenciador de Contexto a lista apresentada (com seus identificadores internos, na ordem apresentada) e pede a escolha. O adaptador nunca converte nomes em identificadores.
 
-Responsável pelo armazenamento, recuperação e atualização das informações relevantes provenientes da interação.
+**Porta de linguagem.** O acesso à LLM ocorre por uma porta com três operações conceituais: interpretar a fala, propor uma chamada de ferramenta e redigir a resposta. A porta pode ser implementada por function calling nativo, por MCP ou por camada própria (seção 19), e pode ser substituída por um provedor simulado nos testes (RNF02, RNF12).
 
-### Responsabilidades
+A LLM **propõe**; operações críticas de controle, como validação, autorização, confirmação e execução, não dependem da saída da LLM.
 
-- armazenar informações relevantes da conversa;
-- recuperar informações previamente fornecidas;
-- disponibilizar contexto ao Núcleo Conversacional;
-- atualizar o contexto após novos turnos;
-- apoiar a resolução de referências contextuais;
-- evitar que informações relevantes sejam solicitadas novamente quando já estiverem disponíveis e forem suficientemente determinadas.
+### 3.3 Gerenciador de Contexto
 
-Exemplos de informações de contexto incluem:
+Responsável pelo armazenamento, recuperação e atualização das informações da interação. Mantém duas áreas distintas:
 
-- recurso mencionado anteriormente;
-- usuário envolvido na operação;
-- parâmetros já informados;
-- resultado de uma consulta anterior;
-- referência a entidades mencionadas anteriormente.
+**Contexto conversacional**
 
----
+- entidades mencionadas, parâmetros já informados e resultados apresentados;
+- a lista de candidatos apresentada por último, com identificadores internos e na ordem apresentada, para resolver referências ordinais;
+- a última resposta emitida, para atendê-la quando o usuário pedir repetição;
+- apoio à resolução de referências e para evitar que informações já disponíveis sejam pedidas de novo (RF03).
 
-## 3.4 Gerenciador de Tarefa
+**Contexto de sessão**
 
-Responsável pelo estado da tarefa atualmente executada.
+- identidade do usuário e permissões da sessão (autenticação simulada no estudo de caso);
+- é definido na abertura da sessão, fora da LLM, e é somente leitura para o Núcleo;
+- é lido pelo Orquestrador para aplicar a identidade às chamadas (seção 15).
 
-### Responsabilidades
+Ambos são descartados ao encerrar a sessão (RF03 CA4, RF10 CA6). Identificadores internos nunca são falados ao usuário.
 
-- registrar o objetivo atual da interação;
-- controlar o progresso da tarefa;
-- registrar informações já obtidas;
-- identificar informações ainda necessárias;
-- registrar operações pendentes;
-- permitir correção de informações;
-- controlar transições entre estados da tarefa;
-- determinar quando uma tarefa foi concluída, cancelada ou interrompida.
+### 3.4 Gerenciador de Tarefa
 
-O Gerenciador de Tarefa permite distinguir o **contexto da conversa** do **estado da tarefa em execução**.
+Responsável pelo estado da tarefa em execução. Distingue o **contexto da conversa** do **estado da tarefa**.
 
----
+**Responsabilidades**
 
-## 3.5 Orquestrador de Ferramentas
+- registrar o objetivo da tarefa (a ferramenta-alvo), os parâmetros já coletados e as ambiguidades pendentes;
+- **calcular, de forma determinística, os parâmetros obrigatórios que faltam**, comparando os parâmetros coletados com a definição da ferramenta (RF04 CA2); a LLM extrai valores, mas quem decide o que falta é o software;
+- guardar a solicitação validada que aguarda confirmação (seção 11);
+- controlar as transições da tarefa pela máquina de estados da seção 12;
+- preservar o estado entre uma falha e a retomada, evitando reiniciar a tarefa (RF09 CA5);
+- permitir a correção de informações já fornecidas (RF09 CA4).
 
-É o componente responsável por controlar o ciclo de utilização das ferramentas.
+Mantém uma tarefa ativa por vez. O tratamento de uma nova solicitação durante uma tarefa não concluída é uma decisão em aberto (seção 19).
 
-### Responsabilidades
+### 3.5 Orquestrador de Ferramentas
 
-- determinar quando uma ferramenta é necessária;
-- selecionar uma ferramenta compatível com a operação;
-- preparar os argumentos;
-- validar os argumentos;
-- verificar se a ferramenta está autorizada;
-- executar a ferramenta;
-- receber o resultado;
-- normalizar o resultado;
-- comunicar falhas;
-- devolver o resultado ao Núcleo Conversacional.
+Controla o ciclo de utilização das ferramentas. É a fronteira de controle entre o processamento baseado em LLM e a execução efetiva de operações externas.
 
-O Orquestrador constitui uma importante fronteira de controle entre o processamento baseado em LLM e a execução efetiva de operações externas.
+**Responsabilidades**
 
-A LLM pode **propor** uma ferramenta e seus argumentos, mas a execução deve ocorrer sob o controle do software responsável pela orquestração.
+- receber a **proposta** de chamada (`ToolRequest`) produzida pelo Núcleo;
+- verificar a ferramenta no Registro (existência, disponibilidade e autorização para a sessão);
+- validar o contrato da chamada (seção 4.3);
+- aplicar a identidade da sessão e descartar ou rejeitar qualquer identidade gerada pelo modelo (RF06 CA4);
+- impor a política de confirmação: não executar uma ferramenta que exige confirmação sem confirmação registrada para a mesma solicitação validada (RF10 CA1 e CA3);
+- executar a ferramenta com tempo-limite;
+- normalizar o resultado em `ToolResult`, inclusive classificar como inconclusivo o tempo-limite em operação de escrita;
+- registrar eventos de cada etapa e devolver o resultado ao Núcleo.
 
----
+A seleção da ferramenta e a geração dos argumentos pertencem à proposta do Núcleo. O Orquestrador **não escolhe** a ferramenta: ele verifica, autoriza e executa o que foi proposto.
 
-# 4. Contrato lógico de ferramentas
+## 4. Contrato lógico de ferramentas
 
-O contrato lógico de ferramentas define a forma abstrata pela qual o sistema disponibiliza operações externas ao Núcleo Conversacional.
+O contrato lógico define a forma abstrata pela qual o sistema disponibiliza operações externas ao Núcleo. Ele separa:
 
-O objetivo desse contrato é separar:
+- a **descrição** de uma capacidade disponível;
+- a **proposta** de execução dessa capacidade;
+- a **validação** da proposta;
+- a **execução** efetiva;
+- o **resultado** da execução.
 
-- a **descrição de uma capacidade disponível**;
-- a **solicitação de execução dessa capacidade**;
-- a **validação da solicitação**;
-- a **execução efetiva**;
-- o **resultado da execução**.
+O contrato é uma abstração arquitetural, que poderá ser implementada por diferentes mecanismos de tool calling ou protocolos de integração.
 
-O contrato não representa, nesta etapa, uma tecnologia ou protocolo específico. Ele define uma abstração arquitetural que poderá posteriormente ser implementada por diferentes mecanismos de tool calling ou protocolos de integração.
-
----
-
-## 4.1 Definição da ferramenta
-
-Cada ferramenta disponibilizada ao assistente deve possuir uma definição lógica que permita ao sistema identificar sua finalidade e os dados necessários para sua execução.
-
-Uma definição conceitual pode ser representada por:
+### 4.1 Definição da ferramenta
 
 ```text
 ToolDefinition
-├── id
-├── name
-├── description
-├── operation
-├── parameters
-├── required_parameters
-└── constraints
+├── id                      identificador único (também o nome visto pelo modelo)
+├── description             capacidade, quando usar e quando não usar
+├── parameters[]            nome, tipo, descrição, obrigatório, restrições
+├── side_effect             READ | WRITE
+├── requires_confirmation   verdadeiro | falso
+├── result_schema           campos devolvidos em caso de sucesso
+├── error_catalog[]         códigos possíveis, categoria, dados adicionais
+└── timeout                 tempo-limite de execução
 ```
 
-### `id`
+- **`description`:** deve permitir ao mecanismo conversacional saber quando a ferramenta é aplicável e quando não é.
+- **`parameters`:** cada parâmetro declara se é obrigatório e suas restrições (formato, valores permitidos, dependências). A lista de obrigatórios é a base do cálculo de parâmetros faltantes (seção 3.4). Parâmetros de identidade do usuário **não** são declarados: vêm da sessão.
+- **`side_effect` e `requires_confirmation`:** distinguem leitura de escrita. A política adotada é que operações de escrita exigem confirmação e consultas não, definida por configuração da ferramenta e não fixa no núcleo (RF10 CA1, RNF01).
+- **`result_schema`:** descreve um resultado compacto, adequado à fala (RNF08).
+- **`error_catalog`:** lista os códigos de erro possíveis, sua categoria e os dados adicionais de cada um.
+- **`timeout`:** tempo-limite da execução (RNF09).
 
-Identificador único da ferramenta.
+Exemplo conceitual, do estudo de caso:
 
-### `name`
+```text
+registrar_emprestimo
+├── side_effect: WRITE        requires_confirmation: verdadeiro
+├── parameters: livro_id (texto, obrigatório)
+├── result_schema: emprestimo_id, titulo, data_prevista_devolucao, emprestimos_ativos
+└── error_catalog: LIVRO_NAO_ENCONTRADO, EMPRESTIMO_ATIVO_MESMO_LIVRO,
+                   CARENCIA_EM_VIGOR, LIMITE_EMPRESTIMOS_ATINGIDO, LIVRO_INDISPONIVEL
+```
 
-Nome utilizado para identificar a operação.
-
-### `description`
-
-Descrição da capacidade oferecida pela ferramenta.
-
-A descrição deve ser suficiente para permitir que o mecanismo conversacional compreenda quando a ferramenta é aplicável.
-
-### `operation`
-
-Identificação da operação de domínio representada pela ferramenta.
-
-### `parameters`
-
-Conjunto de parâmetros que podem ser fornecidos à ferramenta.
-
-### `required_parameters`
-
-Parâmetros obrigatórios para execução.
-
-### `constraints`
-
-Restrições aplicáveis aos parâmetros ou à utilização da ferramenta.
-
-As restrições podem representar, por exemplo:
-
-- formato esperado;
-- valores permitidos;
-- dependências entre parâmetros;
-- condições necessárias para execução.
-
----
-
-## 4.2 Solicitação de execução
-
-Quando o Núcleo Conversacional determinar que uma operação externa é necessária, deve ser produzida uma solicitação lógica de execução.
-
-Conceitualmente:
+### 4.2 Solicitação de execução
 
 ```text
 ToolRequest
-├── tool_id
-├── operation
-├── parameters
-├── relevant_context
-└── task_requirements
+├── request_id     identifica a solicitação (liga validação, confirmação e execução)
+├── turn_id        identifica o turno (rastreabilidade)
+├── tool_id        ferramenta proposta
+└── parameters     argumentos propostos
 ```
 
-### `tool_id`
+O `ToolRequest` é uma **proposta de execução**, e não a execução. Ele não carrega a identidade do usuário, o contexto conversacional nem o estado da tarefa: esses permanecem no Núcleo e nos gerenciadores. Depois de validada, a solicitação é imutável e recebe a marca de validada; a confirmação e a execução referem-se ao mesmo `request_id`.
 
-Identificação da ferramenta selecionada.
+### 4.3 Validação da solicitação
 
-### `operation`
+Antes da execução, o Orquestrador valida o **contrato** da proposta. A validação verifica, no mínimo, se:
 
-Operação que se pretende realizar.
+1. a ferramenta existe no registro;
+2. a ferramenta está disponível;
+3. a ferramenta está autorizada para a sessão;
+4. os parâmetros obrigatórios foram fornecidos;
+5. não há parâmetros desconhecidos nem parâmetros de identidade do usuário;
+6. os tipos e formatos dos parâmetros são válidos;
+7. as restrições declaradas foram respeitadas.
 
-### `parameters`
+O resultado é uma solicitação validada, com o indicador `requires_confirmation`, ou um `ToolResult` com status `VALIDATION_ERROR` e origem `CONTRATO`.
 
-Argumentos determinados para a execução.
+A validação é responsabilidade do software de controle e não depende da LLM: uma saída da LLM que pede uma ferramenta não é autorização para executá-la. Ela verifica a **forma** da chamada. As **regras de negócio** são verificadas pelo domínio. Que existam informações suficientes para propor a chamada é verificado antes, pelo Gerenciador de Tarefa; a validação do Orquestrador é a segunda barreira.
 
-### `relevant_context`
-
-Informações contextuais necessárias para compreender a solicitação.
-
-### `task_requirements`
-
-Informações relacionadas ao estado da tarefa que sejam necessárias para a execução ou validação.
-
-O `ToolRequest` representa uma **intenção de execução**, e não a execução em si.
-
----
-
-## 4.3 Validação da solicitação
-
-Antes da execução, o Orquestrador deve validar a solicitação.
-
-A validação deve verificar, no mínimo:
-
-1. se a ferramenta existe;
-2. se a ferramenta está disponível;
-3. se a ferramenta está autorizada;
-4. se os parâmetros obrigatórios foram fornecidos;
-5. se os parâmetros correspondem à definição da ferramenta;
-6. se os parâmetros possuem formato válido;
-7. se as restrições conhecidas foram respeitadas;
-8. se existem informações suficientes para realizar a operação.
-
-A validação constitui uma responsabilidade do software de controle e não deve depender exclusivamente da LLM.
-
-Consequentemente, uma saída da LLM solicitando uma ferramenta não deve ser interpretada automaticamente como autorização para executá-la.
-
----
-
-## 4.4 Execução da ferramenta
-
-Após a validação, o Orquestrador encaminha a solicitação à interface de ferramentas.
-
-O fluxo lógico é:
+### 4.4 Execução da ferramenta
 
 ```text
 Núcleo Conversacional
-        │
-        │ ToolRequest
+        │  ToolRequest (proposta da LLM)
         ▼
-Orquestrador
-        │
-        ├── verificar ferramenta
-        ├── preparar argumentos
-        ├── validar
-        └── autorizar
-        │
+Orquestrador: validar contrato • autorizar • aplicar identidade da sessão
+        │  solicitação validada (request_id, requires_confirmation)
         ▼
-Interface de Ferramentas
-        │
+  requer confirmação?
+   ├─ não ──────────────────────────────┐
+   └─ sim ─► confirmação do usuário     │
+             (seção 11)                 │
+        │  confirmada (mesmo request_id)│
+        ▼◄──────────────────────────────┘
+Orquestrador: executar com tempo-limite
         ▼
-Adaptador de Domínio
-        │
+Interface de Ferramentas ─► Adaptador ─► Sistema de Domínio
         ▼
-Sistema de Informação
+ToolResult normalizado ─► Núcleo Conversacional
 ```
 
-O Núcleo Conversacional não deve executar diretamente operações no Sistema de Informação de Domínio.
+O Núcleo não executa operações diretamente no sistema de domínio. O Orquestrador recusa executar uma ferramenta com `requires_confirmation` sem confirmação registrada para o mesmo `request_id`.
 
-Essa separação permite que o núcleo permaneça independente da implementação concreta do domínio.
-
----
-
-## 4.5 Resultado da ferramenta
-
-O resultado da execução deve retornar ao Orquestrador em uma estrutura lógica que diferencie resultado de negócio, falha de execução e resultado inconclusivo.
-
-Conceitualmente:
+### 4.5 Resultado da ferramenta
 
 ```text
 ToolResult
-├── status
-├── result
-├── error
-└── metadata
+├── request_id
+├── status      SUCCESS | EMPTY | VALIDATION_ERROR | REJECTED |
+│               EXECUTION_ERROR | INCONCLUSIVE
+├── result      dados compactos produzidos (quando houver)
+├── error       code, origin, recoverable, details (quando houver)
+└── metadata    turn_id, tool_id, início, duração
 ```
 
-### `status`
+- **`error.code`:** código estável do erro (por exemplo, CARENCIA\_EM\_VIGOR).
+- **`error.origin`:** `CONTRATO` (Orquestrador), `DOMINIO` ou `INFRAESTRUTURA`.
+- **`error.recoverable`:** indica se a tarefa pode prosseguir com uma nova informação do usuário.
+- **`error.details`:** dados adicionais necessários para explicar o erro (por exemplo, a data em que a carência termina).
 
-Indica o estado da execução.
+O domínio devolve **códigos e dados**, não texto de fala; a mensagem ao usuário é formulada pelo Núcleo.
 
-Nesta arquitetura são considerados, conceitualmente, os seguintes estados:
+### 4.6 Semântica dos resultados
+
+A distinção entre os status evita que o assistente confunda situações diferentes (RF07 CA2, RF08).
+
+| Status | Quando ocorre | Exemplo no estudo de caso | Categoria no estudo de caso |
+| --- | --- | --- | --- |
+| SUCCESS | A operação foi executada e produziu resultado, inclusive uma lista com vários itens. | Empréstimo registrado; busca com 2 livros. | Sucesso |
+| EMPTY | A consulta foi executada, mas não encontrou dados. Não é falha. | Nenhum livro encontrado. | Vazio |
+| VALIDATION\_ERROR | Argumentos inválidos ou referência inexistente. A origem é o contrato (Orquestrador) ou o domínio. | PARAMETROS\_INSUFICIENTES; LIVRO\_NAO\_ENCONTRADO. | Validação; Não encontrado |
+| REJECTED | A chamada é válida, mas o domínio a recusou por regra de negócio. | LIMITE\_EMPRESTIMOS\_ATINGIDO; CARENCIA\_EM\_VIGOR. | Regra de negócio |
+| EXECUTION\_ERROR | Falha técnica durante a execução. | SERVICO\_INDISPONIVEL. | Erro de execução |
+| INCONCLUSIVE | Não foi possível determinar o resultado da operação. | RESULTADO\_INCERTO. | Inconclusivo |
+
+Observações:
+
+- Tempo-limite em uma **leitura** gera `EXECUTION_ERROR`. Tempo-limite em uma **escrita** gera `INCONCLUSIVE`, porque o efeito pode ter ocorrido (seção 10).
+- Uma busca com vários resultados é `SUCCESS`. A ambiguidade é tratada pelo Núcleo (seção 3.2), e não pela ferramenta.
+- `REJECTED` é o status que faltava na versão 1.2: sem ele, uma recusa de regra de negócio não tinha como ser distinguida de um erro de parâmetros ou de uma falha técnica.
+
+## 5. Responsabilidades: LLM, núcleo, controle e domínio
+
+A arquitetura separa as capacidades da LLM das responsabilidades determinísticas do software.
+
+| Responsabilidade | LLM | Núcleo (software) | Controle (Orquestrador e Registro) | Domínio |
+| --- | :-: | :-: | :-: | :-: |
+| Interpretar linguagem natural e identificar a intenção | ✓ |  |  |  |
+| Extrair os parâmetros da fala | ✓ |  |  |  |
+| Resolver referências e candidatos | ✓ | ✓ |  |  |
+| Calcular os parâmetros obrigatórios que faltam |  | ✓ |  |  |
+| Decidir o próximo passo (política de diálogo) |  | ✓ |  |  |
+| Propor a ferramenta e os argumentos | ✓ |  |  |  |
+| Validar o contrato e autorizar a ferramenta |  |  | ✓ |  |
+| Aplicar a identidade da sessão |  |  | ✓ |  |
+| Impor a confirmação das escritas |  | ✓ | ✓ |  |
+| Executar a ferramenta |  |  | ✓ |  |
+| Aplicar as regras de negócio |  |  |  | ✓ |
+| Normalizar o resultado e classificar o status |  |  | ✓ |  |
+| Verificar o estado após resultado inconclusivo |  | ✓ | ✓ |  |
+| Redigir a resposta | ✓ |  |  |  |
+| Garantir a fidelidade da resposta ao resultado |  | ✓ |  |  |
+| Registrar eventos e falhas |  | ✓ | ✓ |  |
+
+A divisão não significa que toda funcionalidade de linguagem precise estar dentro da LLM. Ela representa a separação desejada entre **interpretação e redação** e **controle efetivo da execução**.
+
+## 6. Registro e Interface de Ferramentas
+
+Disponibiliza ao Orquestrador as ferramentas que podem ser usadas.
+
+**Responsabilidades**
+
+- manter um **registro fechado**: apenas as ferramentas registradas existem para o assistente;
+- disponibilizar suas definições (`ToolDefinition`);
+- identificar as ferramentas autorizadas para a sessão;
+- oferecer uma interface uniforme de execução e ocultar os detalhes de cada ferramenta;
+- permitir incluir ou substituir ferramentas sem alterar o Núcleo (RNF01).
+
+**D-02 — Granularidade 1 para 1.** Cada operação do domínio é exposta como uma ferramenta, com uma camada de adaptação entre a API e a ferramenta. A decisão é reavaliada se os cenários mostrarem excesso de encadeamento. As ferramentas do estudo de caso são:
+
+| Ferramenta | Efeito | Confirmação | Parâmetros |
+| --- | --- | --- | --- |
+| consultar\_livros | READ | Não | titulo, autor |
+| consultar\_emprestimos | READ | Não | situacao |
+| registrar\_emprestimo | WRITE | Sim | livro\_id |
+| registrar\_devolucao | WRITE | Sim | emprestimo\_id |
+
+## 7. Adaptador do Sistema de Domínio
+
+Isola o restante da arquitetura da implementação concreta do sistema de informação.
+
+**Responsabilidades**
+
+- traduzir a chamada da ferramenta na operação concreta do domínio (a correspondência fica na configuração do adaptador, não no contrato do Núcleo);
+- adaptar os parâmetros e os resultados, devolvendo um resultado **compacto** no formato de `ToolResult`;
+- converter erros do domínio e da infraestrutura em códigos estáveis do catálogo de erros;
+- repassar ao domínio a identidade da sessão fornecida pelo Orquestrador;
+- **não** resolver nomes em identificadores, **não** aplicar regras de negócio e **não** repetir automaticamente operações de escrita após falha ou tempo-limite;
+- impedir que detalhes do domínio cheguem ao Núcleo.
+
+Por exemplo, a solicitação conceitual:
 
 ```text
-SUCCESS
-EMPTY
-VALIDATION_ERROR
-EXECUTION_ERROR
-INCONCLUSIVE
+registrar_emprestimo
+livro_id = L03        (obtido pela consulta e mantido no contexto)
+usuário  = sessão     (aplicado pelo Orquestrador; não vem da LLM)
 ```
 
-### `result`
+é convertida pelo adaptador na operação concreta da API do sistema de biblioteca.
 
-Resultado efetivamente produzido pela ferramenta, quando existente.
+## 8. Sistema de Informação de Domínio
 
-### `error`
+Responsável pelos dados e pelas regras de negócio do domínio. No estudo de caso, é o sistema de empréstimos da biblioteca (Especificação do Estudo de Caso, regras RN01 a RN08).
 
-Informações sobre uma falha, quando aplicável.
+**Responsabilidades**
 
-### `metadata`
+- armazenar os dados e executar as operações de negócio;
+- aplicar as regras e determinar se uma operação é permitida (RNF05);
+- aplicar o isolamento por usuário, com base na identidade da sessão (RN08);
+- devolver resultados e erros como códigos e dados, e não como texto de fala;
+- permitir fixar a data de referência e restaurar a base nos testes (RNF12).
 
-Informações auxiliares relevantes para processamento, observabilidade ou rastreabilidade.
+As regras de negócio permanecem no domínio e não são reproduzidas pelo Núcleo nem pela LLM. Quando o domínio recusa uma operação, o assistente comunica o resultado efetivamente retornado.
 
----
-
-## 4.6 Semântica dos resultados
-
-A distinção entre os estados do resultado é importante para evitar que o assistente confunda situações diferentes.
-
-### `SUCCESS`
-
-A operação foi executada com sucesso e produziu um resultado.
-
-### `EMPTY`
-
-A operação foi executada, mas não encontrou dados correspondentes à solicitação.
-
-Exemplo:
+## 9. Fluxo normal de utilização de ferramenta
 
 ```text
-Consulta executada → nenhum livro correspondente encontrado.
+ 1. Usuário fala
+        ↓
+ 2. Interface: transcrição e confiança                    (RF01)
+        ↓   [sem fala ou ininteligível → pedir repetição (RF13)]
+ 3. Núcleo interpreta: intenção e parâmetros              (RF02)
+        ↓
+ 4. Gerenciador de Tarefa atualiza o estado e calcula
+    os parâmetros obrigatórios que faltam                 (RF04)
+        ↓   [falta informação → pedir e encerrar o turno]
+        ↓   [vários candidatos → apresentar e pedir escolha]
+ 5. Núcleo propõe o ToolRequest                           (RF05, RF06)
+        ↓
+ 6. Orquestrador valida o contrato e aplica a identidade da sessão
+        ↓
+ 7. Escrita? → confirmação do usuário (seção 11)          (RF10)
+        ↓
+ 8. Orquestrador executa → ToolResult                     (RF07)
+        ↓
+ 9. Núcleo trata o resultado conforme o status (seção 10) (RF08, RF09)
+        ↓
+10. Resposta gerada sob a guarda de fidelidade (seção 16) (RF11)
+        ↓
+11. Interface sintetiza e reproduz a voz                  (RF12)
 ```
 
-Isso é diferente de uma falha de execução.
+Cada etapa gera eventos no Registro de Eventos (seção 14).
 
-### `VALIDATION_ERROR`
-
-A solicitação não pôde ser executada porque os parâmetros ou condições da chamada não satisfaziam os requisitos conhecidos.
-
-### `EXECUTION_ERROR`
-
-A ferramenta foi acionada, mas ocorreu uma falha durante sua execução.
-
-### `INCONCLUSIVE`
-
-A execução não produziu informação suficientemente confiável para determinar o resultado da operação.
-
-Essa categoria é particularmente importante para impedir que o Núcleo Conversacional produza uma resposta afirmativa quando o sistema não conseguiu determinar efetivamente o resultado da operação.
-
----
-
-# 5. Responsabilidade da LLM e da camada de controle
-
-A arquitetura estabelece uma separação conceitual entre as capacidades da LLM e as responsabilidades determinísticas do software.
-
-| Responsabilidade | LLM / Núcleo | Camada de controle |
-|---|---:|---:|
-| Interpretar linguagem natural | ✓ | |
-| Identificar intenção | ✓ | |
-| Identificar informações relevantes | ✓ | |
-| Sugerir ferramenta | ✓ | |
-| Gerar argumentos | ✓ | |
-| Interpretar resultado | ✓ | |
-| Gerar resposta natural | ✓ | |
-| Validar ferramenta existente | | ✓ |
-| Validar parâmetros | | ✓ |
-| Verificar autorização | | ✓ |
-| Executar ferramenta | | ✓ |
-| Controlar acesso ao domínio | | ✓ |
-| Preservar regras de negócio | | ✓ |
-| Garantir que a execução ocorreu | | ✓ |
-| Registrar execução e falhas | | ✓ |
-
-Essa separação não significa que toda funcionalidade relacionada à linguagem precise estar necessariamente dentro da LLM. Ela representa a divisão arquitetural desejada entre **interpretação/generation** e **controle efetivo da execução**.
-
----
-
-# 6. Registro e Interface de Ferramentas
-
-O Registro e Interface de Ferramentas representa a camada responsável por disponibilizar ao Orquestrador as ferramentas que podem ser utilizadas.
-
-### Responsabilidades
-
-- registrar ferramentas disponíveis;
-- disponibilizar suas definições;
-- identificar ferramentas autorizadas;
-- fornecer uma interface uniforme para execução;
-- ocultar detalhes específicos da implementação das ferramentas;
-- permitir a inclusão ou substituição de ferramentas sem alteração do Núcleo Conversacional.
-
-Essa camada deve funcionar como uma fronteira controlada de integração.
-
-A quantidade e granularidade das ferramentas permanecem como decisões de arquitetura e implementação.
-
-Por exemplo, o domínio da biblioteca poderia disponibilizar ferramentas como:
+Exemplo do estudo de caso (cenário CC-04):
 
 ```text
-consultar_informacao
-verificar_disponibilidade
-realizar_emprestimo
-realizar_devolucao
-consultar_emprestimos
+Usuário: Quero pegar Dom Casmurro emprestado.
+  Núcleo → consultar_livros(titulo = Dom Casmurro)     SUCCESS, 1 livro (L03)
+  Núcleo → registrar_emprestimo(livro_id = L03)        proposta
+  Orquestrador valida; ferramenta de escrita → requer confirmação
+Assistente: Posso registrar o empréstimo de Dom Casmurro, de Machado de Assis?
+Usuário: Sim.
+  Orquestrador executa a mesma solicitação validada    SUCCESS
+Assistente: Pronto. A devolução é até 23 de novembro.
 ```
 
-ou poderia utilizar operações mais abrangentes.
+Se faltar informação, o fluxo é interrompido antes da execução: o Gerenciador de Tarefa aponta o que falta, o Núcleo pergunta, o usuário complementa e a tarefa é retomada. Isso concretiza o princípio de que o sistema não executa uma operação sem informação suficiente para determinar a ação (RF04 CA4).
 
-A escolha entre essas alternativas não é determinada pelos casos de uso e deverá ser avaliada posteriormente considerando coesão, segurança, clareza das interfaces, complexidade e capacidade do mecanismo de tool calling adotado.
+## 10. Falha e recuperação
 
----
+O tratamento depende do status do `ToolResult`:
 
-# 7. Adaptador do Sistema de Domínio
+| Status | Tratamento | Estado da tarefa | Requisitos e cenários |
+| --- | --- | --- | --- |
+| SUCCESS | Usar os dados na resposta; se houver vários candidatos, tratar a ambiguidade. | CONCLUIDA, ou EM\_COLETA quando falta a escolha | RF08 CA1 e CA4; CC-01, CC-07 |
+| EMPTY | Informar que nada foi encontrado e sugerir reformular. Não é falha. | CONCLUIDA | RF08 CA2 |
+| VALIDATION\_ERROR | Pedir a informação correta ou propor nova busca, mantendo o que foi coletado. | EM\_COLETA | RF09 CA1; CC-05 |
+| REJECTED | Explicar o motivo com o código e os dados retornados, sem repetir a chamada. | RECUSADA | RF08 CA3; CC-12 a CC-14 |
+| EXECUTION\_ERROR | Informar o problema sem afirmar que a operação foi realizada e oferecer nova tentativa. | FALHA | RF09 CA2; CC-21 |
+| INCONCLUSIVE | Verificar o estado por consulta antes de responder. | VERIFICANDO | RF09 CA3; CC-22 |
 
-O Adaptador do Sistema de Domínio isola o restante da arquitetura da implementação concreta do sistema de informação.
+**Verificação de estado após resultado inconclusivo**
 
-### Responsabilidades
+- A política de diálogo solicita ao Orquestrador uma consulta de leitura registrada que revele se o efeito ocorreu (no estudo de caso, a consulta de empréstimos, para empréstimo e devolução). O resultado é um novo `ToolResult`.
+- Se a consulta mostra o efeito, o assistente informa o resultado real. Se mostra que não ocorreu, informa que a operação não foi concluída e oferece nova tentativa, que reabre a confirmação. Se a verificação também falha, informa que não pode confirmar o resultado.
+- Uma escrita nunca é repetida automaticamente. O domínio torna a verificação segura: repetir uma escrita já efetivada retorna um erro de regra (por exemplo, EMPRESTIMO\_ATIVO\_MESMO\_LIVRO), sem duplicar o efeito.
 
-- traduzir chamadas de ferramentas em operações do domínio;
-- adaptar parâmetros;
-- adaptar resultados;
-- tratar diferenças entre a interface da ferramenta e a API ou interface interna do domínio;
-- preservar as regras de negócio do sistema de domínio;
-- impedir que detalhes da implementação do domínio vazem para o Núcleo Conversacional.
+Falhas do reconhecimento de fala, da síntese de voz ou da LLM são tratadas pela Interface e pelo Núcleo com tempo-limite e mensagem controlada, e nunca deixam o usuário em silêncio indefinido (RNF09). A recuperação pode envolver pedir um parâmetro, corrigir um parâmetro, esclarecer uma ambiguidade, propor nova busca ou permitir outra operação, e **não deve mascarar uma falha efetivamente ocorrida**.
 
-Assim, uma solicitação conceitual como:
+## 11. Confirmação
 
 ```text
-realizar_emprestimo
-livro = "Clean Code"
-usuario = "Pedro"
+Núcleo propõe o ToolRequest
+        ↓
+Orquestrador valida → solicitação validada (request_id)
+        ↓
+requires_confirmation?
+   ├─ não → executar
+   └─ sim → Gerenciador de Tarefa guarda a solicitação (AGUARDANDO_CONFIRMACAO)
+            Núcleo pede a confirmação descrevendo a ação e a entidade
+            ↓
+            resposta do usuário (tabela abaixo)
 ```
 
-pode ser convertida pelo adaptador para a operação concreta existente no sistema de informação.
+| Resposta do usuário | Resultado |
+| --- | --- |
+| Confirma (“sim”) | Executa exatamente a solicitação validada e guardada (mesmo `request_id`), sem gerar novos argumentos. |
+| Nega (“não”) | Cancela a operação; nada é executado. |
+| Corrige (“não, o outro livro”) | Volta à coleta, atualiza o parâmetro, valida de novo e pede nova confirmação, sem reiniciar a tarefa. |
+| Cancela (“esquece”) | Cancela a operação pendente. |
+| Não compreendida | Repete o pedido de confirmação (RF13). |
 
-O Núcleo Conversacional não precisa conhecer essa implementação.
+Regras:
 
----
+- Um “sim” só é confirmação quando há confirmação pendente (RF02 CA3; CC-20).
+- O pedido de confirmação é redigido a partir da solicitação e do contexto (título e autor), de modo que o usuário confirma exatamente o que será executado.
+- A confirmação é **imposta pelo software**: o Orquestrador não executa uma escrita sem confirmação registrada para o mesmo `request_id`.
+- O cancelamento só é possível antes da execução. Depois dela, desfazer exige uma nova operação (por exemplo, devolver o livro), conforme RF10 CA5.
+- Uma nova tentativa de escrita após falha reabre a confirmação.
+- Operações de leitura, com `requires_confirmation` falso, são executadas sem confirmação.
 
-# 8. Sistema de Informação de Domínio
+Cenários: CC-04, CC-09, CC-10, CC-11 e CC-20.
 
-É responsável pelos dados e pelas regras de negócio específicas do domínio da aplicação.
+## 12. Estado da tarefa
 
-No estudo de caso do TCC, corresponde ao sistema responsável pelas operações relacionadas à biblioteca.
-
-### Responsabilidades
-
-- armazenar dados do domínio;
-- executar operações de negócio;
-- aplicar regras de negócio;
-- determinar se uma operação é permitida;
-- produzir os resultados das operações.
-
-As regras de negócio devem permanecer no sistema de domínio, e não ser reproduzidas pelo Núcleo Conversacional ou pela LLM.
-
-Por exemplo, uma operação de empréstimo pode ser recusada pelo sistema de domínio devido a uma regra da biblioteca. Nesse caso, o assistente deve comunicar o resultado efetivamente retornado pelo domínio.
-
----
-
-# 9. Fluxo normal de utilização de ferramenta
-
-O fluxo completo de uma solicitação que exige uma ferramenta é:
+Caminho principal de uma operação de escrita:
 
 ```text
-1. Usuário realiza solicitação
-        ↓
-2. Interface recebe entrada
-        ↓
-3. Núcleo interpreta solicitação
-        ↓
-4. Contexto e estado da tarefa são consultados
-        ↓
-5. Informações necessárias são determinadas
-        ↓
-6. Operação necessária é determinada
-        ↓
-7. Ferramenta compatível é selecionada
-        ↓
-8. Argumentos são preparados
-        ↓
-9. Solicitação é validada
-        ↓
-10. Ferramenta é executada
-        ↓
-11. Resultado é recebido
-        ↓
-12. Resultado é normalizado
-        ↓
-13. Núcleo interpreta resultado
-        ↓
-14. Resposta é gerada
-        ↓
-15. Resposta é convertida para voz
-        ↓
-16. Usuário recebe resposta
+EM_COLETA → AGUARDANDO_CONFIRMACAO → EXECUTANDO → CONCLUIDA
 ```
 
-Caso informações necessárias estejam ausentes, o fluxo é interrompido antes da execução:
+| Estado | Significado |
+| --- | --- |
+| EM\_COLETA | Objetivo identificado; coletando parâmetros ou resolvendo uma ambiguidade. |
+| AGUARDANDO\_CONFIRMACAO | Solicitação validada de escrita guardada, aguardando a resposta do usuário. |
+| EXECUTANDO | Chamada em execução. |
+| VERIFICANDO | Resultado inconclusivo; verificando o estado por consulta. |
+| CONCLUIDA | Operação concluída com resultado (terminal). |
+| RECUSADA | Operação recusada por regra de negócio (terminal). |
+| CANCELADA | Cancelada pelo usuário antes da execução, ou por desistência (terminal). |
+| FALHA | Falha de execução ou efeito não confirmado; aguarda a decisão do usuário (nova tentativa ou desistência). |
 
-```text
-Solicitação
-    ↓
-Informações necessárias
-    ↓
-[Informação ausente]
-    ↓
-Solicitar informação
-    ↓
-Usuário complementa
-    ↓
-Retomar tarefa
-```
+| De | Evento | Para |
+| --- | --- | --- |
+| (início) | Intenção identificada | EM\_COLETA |
+| EM\_COLETA | Solicitação de leitura validada | EXECUTANDO |
+| EM\_COLETA | Solicitação de escrita validada | AGUARDANDO\_CONFIRMACAO |
+| AGUARDANDO\_CONFIRMACAO | Confirmação positiva | EXECUTANDO |
+| AGUARDANDO\_CONFIRMACAO | Correção do usuário | EM\_COLETA |
+| AGUARDANDO\_CONFIRMACAO | Negação ou cancelamento | CANCELADA |
+| EXECUTANDO | SUCCESS ou EMPTY | CONCLUIDA (EM\_COLETA se houver vários candidatos) |
+| EXECUTANDO | VALIDATION\_ERROR | EM\_COLETA |
+| EXECUTANDO | REJECTED | RECUSADA |
+| EXECUTANDO | EXECUTION\_ERROR | FALHA |
+| EXECUTANDO | INCONCLUSIVE | VERIFICANDO |
+| VERIFICANDO | Efeito confirmado | CONCLUIDA |
+| VERIFICANDO | Efeito não ocorreu ou verificação impossível | FALHA |
+| FALHA | Nova tentativa pedida pelo usuário | AGUARDANDO\_CONFIRMACAO (escrita) ou EXECUTANDO (leitura) |
+| FALHA | Desistência | CANCELADA |
 
-Isso concretiza o princípio de que o sistema não deve executar uma operação quando não possui informações suficientes para determinar adequadamente a ação.
+O estado da tarefa é preservado em todas as transições, o que permite retomar sem reiniciar (RF09 CA5). Os estados terminais encerram a tarefa, mas o contexto conversacional permanece na sessão, permitindo continuidade (por exemplo, “esse”).
 
----
+## 13. Isolamento do domínio
 
-# 10. Fluxo de falha e recuperação
-
-Quando uma ferramenta falha, o resultado deve ser devolvido ao Núcleo Conversacional com indicação explícita do estado da operação.
-
-```text
-Execução
-   ↓
-Falha
-   ↓
-ToolResult
-   ↓
-Orquestrador
-   ↓
-Núcleo Conversacional
-   ↓
-Interpretar falha
-   ↓
-┌────────────────────────────────┐
-│ É possível recuperar?          │
-└───────────────┬────────────────┘
-                │
-        ┌───────┴────────┐
-        │                │
-       SIM              NÃO
-        │                │
-        ▼                ▼
-Solicitar correção   Informar falha
-ou nova informação   e encerrar tarefa
-```
-
-A recuperação pode envolver:
-
-- solicitar parâmetro ausente;
-- corrigir um parâmetro;
-- esclarecer uma ambiguidade;
-- selecionar novamente uma ferramenta;
-- permitir que o usuário tente outra operação.
-
-A recuperação não deve mascarar uma falha efetivamente ocorrida.
-
----
-
-# 11. Fluxo de confirmação
-
-Operações que exigirem confirmação podem utilizar o seguinte fluxo:
-
-```text
-Solicitação
-    ↓
-Determinação da operação
-    ↓
-Preparação e validação
-    ↓
-[Confirmação necessária]
-    ↓
-Solicitar confirmação
-    ↓
-┌───────────────┐
-│ Usuário       │
-│ confirma?     │
-└───────┬───────┘
-        │
-   ┌────┴────┐
-   │         │
-  SIM       NÃO
-   │         │
-   ▼         ▼
-Executar   Cancelar
-```
-
-A confirmação não é considerada obrigatória para todas as operações. Sua necessidade deve ser determinada pelas regras da operação, pelos requisitos do sistema e pelas decisões de segurança e interação.
-
----
-
-# 12. Isolamento do domínio
-
-Uma propriedade central da arquitetura é que o Núcleo Conversacional não dependa diretamente das estruturas internas do domínio.
-
-A dependência desejada é:
+O Núcleo Conversacional não depende das estruturas internas do domínio. A dependência desejada é:
 
 ```text
 Núcleo Conversacional
@@ -692,186 +540,171 @@ Adaptador
 Domínio
 ```
 
-e não:
+e não a dependência direta do Núcleo em API, banco ou classes do domínio. Essa separação favorece a reutilização do núcleo, a substituição do domínio, a inclusão de novos domínios, a substituição das ferramentas, os testes isolados e a evolução independente dos componentes.
 
-```text
-Núcleo Conversacional
-        ↓
-API / Banco / Classes específicas do domínio
-```
+Verificação (RNF01): inspeção das dependências do núcleo e execução do núcleo com um conjunto alternativo de ferramentas de teste, sem alterar seu código.
 
-Essa separação favorece:
+## 14. Observabilidade e rastreabilidade
 
-- reutilização do núcleo conversacional;
-- substituição do sistema de domínio;
-- inclusão de novos domínios;
-- substituição das ferramentas;
-- testes isolados;
-- evolução independente dos componentes.
+O **Registro de Eventos** é um componente transversal. Recebe eventos estruturados de todos os componentes, com campos comuns: `turn_id`, `task_id`, `request_id` (quando houver), tipo do evento, componente, marca de tempo, status e duração.
 
----
+Entre os eventos registrados estão:
 
-# 13. Observabilidade e rastreabilidade
+- fala transcrita, com a confiança;
+- interpretação produzida e contexto utilizado;
+- informações ausentes e candidatos apresentados;
+- proposta de chamada e resultado da validação;
+- confirmação pedida e resposta do usuário;
+- execução e `ToolResult` (status, código de erro, duração);
+- verificação de estado e transições do estado da tarefa;
+- resposta produzida;
+- falhas dos serviços de voz e da LLM.
 
-A arquitetura deve permitir registrar informações suficientes para compreender o comportamento do sistema.
+As marcas de tempo permitem medir a latência de turno (do fim da fala ao início do áudio) e a duração de cada etapa: reconhecimento, interpretação, validação, execução, redação e síntese (RNF07). O áudio bruto não é registrado, e os registros usam o identificador da sessão e dados fictícios (RNF10).
 
-Entre os eventos potencialmente relevantes estão:
+A partir dos registros de um cenário deve ser possível reconstruir a sequência de eventos de cada turno e relacioná-la aos requisitos e cenários (RNF03). O mecanismo concreto de observabilidade permanece fora do escopo deste modelo lógico.
 
-- entrada recebida;
-- interpretação produzida;
-- contexto utilizado;
-- informações identificadas;
-- informações ausentes;
-- operação determinada;
-- ferramenta selecionada;
-- argumentos produzidos;
-- resultado da validação;
-- execução realizada;
-- resultado recebido;
-- falha identificada;
-- recuperação realizada;
-- resposta produzida.
+## 15. Segurança e controle de acesso
 
-Esses registros devem permitir relacionar o comportamento observado aos requisitos, casos de uso e cenários de verificação definidos no projeto.
+- **Registro fechado.** Uma ferramenta não registrada é rejeitada e o evento é registrado (RF05 CA1).
+- **Identidade fora do modelo.** A identidade vem do contexto de sessão e é aplicada pelo Orquestrador; qualquer identidade gerada pela LLM é descartada ou rejeitada (RF06 CA4, RNF06).
+- **Autorização em dois níveis.** De ferramenta, pelo Orquestrador e pelo Registro (a ferramenta está autorizada para a sessão), e de dado, pelo domínio (cada usuário só acessa os próprios dados, RN08). A consulta a dados de outro usuário retorna não encontrado (CT-13, CC-19).
+- **Escritas só após confirmação** vinculada à solicitação validada (seção 11).
+- **Conteúdo não confiável.** A fala do usuário e os dados retornados por ferramentas são tratados como dados: instruções contidas neles não alteram o registro de ferramentas, as políticas nem a identidade.
+- **Credenciais e chaves** de provedores ficam fora do código-fonte e do registro de eventos (RNF10).
 
-A implementação concreta do mecanismo de observabilidade permanece fora do escopo deste modelo lógico.
+## 16. Fidelidade da resposta
 
----
+O princípio P7 exige que a resposta represente o resultado efetivamente produzido (RF11 CA3, RNF04). Para isso:
 
-# 14. Princípios arquiteturais
+1. A política de diálogo define o **tipo de resposta** a partir do status do `ToolResult` e do estado da tarefa (resultado, recusa, falha, pedido de informação, pedido de confirmação ou encerramento). A LLM redige dentro desse tipo.
+2. A redação recebe os **fatos** (status, dados e códigos retornados) e não cita dados que não estejam neles (RF11 CA2).
+3. Uma resposta que afirma a realização de uma operação de escrita só é emitida quando o status é SUCCESS ou quando a verificação de estado confirmou o efeito.
+4. Uma verificação após a redação confere essa regra. Se falhar, a resposta é substituída por uma redação padrão segura para o tipo de resposta.
+5. Em INCONCLUSIVE e EXECUTION\_ERROR, nenhuma resposta afirma que a operação foi realizada.
 
-A arquitetura é orientada pelos seguintes princípios:
+Cenários de verificação: CC-12 a CC-14, CC-21, CC-22 e CT-08 a CT-11, CT-17, CT-18.
 
-### P1 — Separação entre interação e domínio
+## 17. Princípios arquiteturais
 
-A lógica de interação conversacional deve permanecer separada das regras de negócio.
+| Princípio | Descrição | Requisitos |
+| --- | --- | --- |
+| P1 — Separação entre interação e domínio | A lógica conversacional permanece separada das regras de negócio. | RNF01, RNF05 |
+| P2 — Desacoplamento do núcleo | O núcleo não depende de um domínio específico. | RNF01 |
+| P3 — Ferramentas como fronteira de integração | Operações externas só são acessadas por ferramentas explicitamente disponibilizadas. | RF05, RF07, RNF06 |
+| P4 — Controle da execução | Gerar uma chamada na LLM não implica executá-la. | RF06, RF07 |
+| P5 — Validação antes da execução | As solicitações são verificadas antes de alcançar o domínio. | RF06 |
+| P6 — Preservação das regras de negócio | As regras permanecem sob responsabilidade do domínio. | RNF05 |
+| P7 — Fidelidade ao resultado | O assistente representa o resultado efetivamente produzido, distinguindo sucesso, ausência de dados, recusa, falha e resultado inconclusivo. | RF08, RF11, RNF04 |
+| P8 — Recuperação da interação | Falhas e informações insuficientes permitem recuperação sempre que possível. | RF09 |
+| P9 — Observabilidade | O comportamento é observável o bastante para permitir verificação e rastreabilidade. | RNF03, RNF07 |
+| P10 — Independência tecnológica | O modelo lógico não depende de protocolo, framework ou fornecedor; os provedores são acessados por portas. | RNF02 |
+| P11 — Identidade fora do modelo (novo) | A identidade do usuário vem da sessão e é aplicada pelo software. | RF06, RNF06 |
+| P12 — Confirmação imposta por software (novo) | Escritas exigem confirmação ligada à solicitação validada. | RF10 |
 
-### P2 — Desacoplamento do núcleo conversacional
+## 18. Decisões de arquitetura
 
-O núcleo não deve depender diretamente de um domínio específico.
+| ID | Decisão | Justificativa |
+| --- | --- | --- |
+| AD-01 | A LLM propõe a chamada; o Orquestrador verifica, autoriza e executa. | Elimina a ambiguidade de papéis da v1.2 (seções 3.2, 3.5, 4.4 e 16) e sustenta o P4. |
+| AD-02 | Granularidade 1 para 1 entre operações e ferramentas, com camada de adaptação (D-02 do estudo de caso). | Simples de explicar, rastrear e testar; reavaliada se houver excesso de encadeamento. |
+| AD-03 | A identidade do usuário fica no contexto de sessão e é aplicada pelo Orquestrador (D-03). | Impede o acesso a dados de outro usuário (RN08, RNF06). |
+| AD-04 | Novo status REJECTED e erro estruturado no `ToolResult`. | Distingue recusa por regra de negócio de erro de parâmetro e de falha técnica (RF07 CA2). |
+| AD-05 | A confirmação é imposta pelo Orquestrador e vinculada ao `request_id`; a execução usa a solicitação validada guardada. | Garante que se executa exatamente o que foi confirmado (RF10 CA3). |
+| AD-06 | Os parâmetros faltantes são calculados de forma determinística pelo Gerenciador de Tarefa. | Evita depender da LLM para decidir o que falta (RF04 CA2). |
+| AD-07 | Reconhecimento de fala, síntese de voz e LLM são acessados por portas. | Permite substituição e simulação nos testes (RNF02, RNF12). |
+| AD-08 | O resultado inconclusivo de uma escrita é verificado por consulta antes de responder, e escritas não são repetidas automaticamente. | Evita afirmar sucesso ou falha sem saber, e evita duplicações (RF09 CA3). |
+| AD-09 | A resolução de entidades e a desambiguação ficam no Núcleo; o adaptador não converte nomes em identificadores. | A ambiguidade fica visível ao diálogo (RF04 CA3). |
+| AD-10 | O contexto de sessão é separado do contexto conversacional. | Identidade e permissões não podem ser alteradas pela conversa. |
 
-### P3 — Ferramentas como fronteira de integração
+## 19. Decisões ainda em aberto
 
-Operações externas devem ser acessadas por meio de ferramentas explicitamente disponibilizadas.
+A arquitetura estabelece responsabilidades, interfaces e contratos conceituais. As decisões abaixo ficam para o projeto detalhado:
 
-### P4 — Controle da execução
-
-A geração de uma chamada pela LLM não implica sua execução automática.
-
-### P5 — Validação antes da execução
-
-As solicitações devem ser verificadas antes de alcançar o sistema de domínio.
-
-### P6 — Preservação das regras de negócio
-
-As regras específicas do domínio devem permanecer sob responsabilidade do sistema de domínio.
-
-### P7 — Fidelidade ao resultado
-
-O assistente deve representar o resultado efetivamente produzido pela operação, distinguindo sucesso, ausência de dados, falha e resultado inconclusivo.
-
-### P8 — Recuperação da interação
-
-Falhas e informações insuficientes devem permitir recuperação sempre que possível.
-
-### P9 — Observabilidade
-
-O comportamento do sistema deve ser suficientemente observável para permitir verificação e rastreabilidade.
-
-### P10 — Independência tecnológica
-
-O modelo lógico não deve depender, nesta etapa, de um protocolo, framework ou fornecedor específico.
-
----
-
-# 15. Decisões ainda em aberto
-
-A arquitetura estabelece as responsabilidades e interfaces conceituais, mas algumas decisões permanecem deliberadamente abertas para a fase de projeto detalhado.
-
-Entre elas:
-
-- tecnologia de reconhecimento de voz;
-- tecnologia de síntese de voz;
+- tecnologia de reconhecimento de fala e de síntese de voz;
 - modelo de LLM;
-- mecanismo de tool calling;
-- adoção ou não de MCP;
+- mecanismo de tool calling (nativo da LLM, MCP ou camada própria);
 - protocolo de comunicação entre componentes;
-- armazenamento do contexto;
-- implementação do Gerenciador de Tarefa;
-- granularidade das ferramentas;
-- formato concreto de `ToolDefinition`;
-- formato concreto de `ToolRequest`;
-- formato concreto de `ToolResult`;
-- mecanismo de autorização das ferramentas;
-- mecanismo de observabilidade;
-- implementação do sistema de domínio.
+- armazenamento do contexto e implementação do Gerenciador de Tarefa;
+- formato concreto de `ToolDefinition`, `ToolRequest` e `ToolResult`;
+- mecanismo de autorização das ferramentas e de observabilidade;
+- valores de tempo-limite por chamada, limite de confiança do reconhecimento e tempo-limite de silêncio;
+- comportamento quando o usuário muda de assunto durante uma tarefa pendente (retomar, substituir ou pedir esclarecimento);
+- verificação prévia de limite e carência antes de pedir a confirmação (nos cenários CC-12 e CC-13 a recusa só ocorre após a confirmação; a consulta de empréstimos já devolve esses dados, ao custo de uma chamada a mais);
+- implementação do sistema de domínio (API simples do estudo de caso).
 
-Essas decisões deverão ser tomadas posteriormente considerando os requisitos, os casos de uso, a literatura levantada e as restrições do protótipo.
+Essas decisões serão tomadas considerando os requisitos, os casos de uso, a literatura levantada e as restrições do protótipo.
 
----
+## 20. Rastreabilidade
 
-# 16. Relação com os requisitos e casos de uso
+### 20.1 Requisitos funcionais × componentes
 
-O modelo arquitetural deve fornecer suporte aos requisitos funcionais consolidados.
+| Requisito | Componentes principais | Seções |
+| --- | --- | --- |
+| RF01 — Receber e transcrever a voz | Interface (porta de reconhecimento de fala), Registro de Eventos | 3.1, 14 |
+| RF02 — Interpretar a solicitação | Núcleo (interpretação), Gerenciador de Tarefa (estado para o “sim”) | 3.2, 3.4 |
+| RF03 — Contexto conversacional | Gerenciador de Contexto, Núcleo | 3.3 |
+| RF04 — Informações da tarefa | Gerenciador de Tarefa (faltantes), Núcleo (ambiguidade), Gerenciador de Contexto (candidatos) | 3.2 a 3.4 |
+| RF05 — Selecionar a ferramenta | Núcleo (proposta), Registro (registro fechado), Orquestrador (verificação) | 3.2, 3.5, 6 |
+| RF06 — Preparar e validar a chamada | Núcleo (argumentos), Orquestrador (validação e identidade) | 4.2, 4.3 |
+| RF07 — Executar ferramentas | Orquestrador, Interface de Ferramentas, Adaptador | 3.5, 4.4, 7 |
+| RF08 — Processar resultados | Núcleo (política de diálogo) | 4.6, 10 |
+| RF09 — Falhas e recuperação | Núcleo, Gerenciador de Tarefa, Orquestrador (verificação) | 10, 12 |
+| RF10 — Controle da interação | Núcleo (política), Gerenciador de Tarefa, Orquestrador (imposição), Interface (encerramento) | 11, 12 |
+| RF11 — Resposta textual | Núcleo (geração e guarda de fidelidade) | 3.2, 16 |
+| RF12 — Resposta por voz | Interface (porta de síntese de voz) | 3.1 |
+| RF13 — Incerteza do reconhecimento | Interface (qualidade e confiança), Núcleo (política) | 3.1, 3.2 |
+| RF14 — Controle da saída de voz | Interface (reprodução, interrupção e silêncio), Núcleo (repetir) | 3.1, 3.3 |
 
-A relação conceitual é:
+### 20.2 Requisitos não funcionais × arquitetura
 
-```text
-Requisitos
-    ↓
-Casos de Uso
-    ↓
-Responsabilidades Arquiteturais
-    ↓
-Componentes
-    ↓
-Contratos / Interfaces
-    ↓
-Implementação
-```
+| Requisito | Onde é atendido |
+| --- | --- |
+| RNF01 — Desacoplamento do domínio | Seções 4.1 (confirmação por configuração), 6 e 13 |
+| RNF02 — Substituição de provedores | Portas da Interface e do Núcleo (3.1, 3.2); AD-07 |
+| RNF03 — Observabilidade | Seção 14 |
+| RNF04 — Fidelidade ao resultado | Seções 4.6 e 16 |
+| RNF05 — Regras no domínio | Seções 4.3 e 8 |
+| RNF06 — Restrição de acesso | Seções 6 e 15 |
+| RNF07 — Desempenho | Seção 14 (latência por etapa) |
+| RNF08 — Concisão das respostas | Seções 3.2 (geração) e 4.1 (`result_schema`) |
+| RNF09 — Resiliência a falhas externas | Seções 3.1, 4.6 e 10 |
+| RNF10 — Privacidade | Seções 3.1, 14 e 15 |
+| RNF11 — Idioma | Portas de fala em português do Brasil (3.1) |
+| RNF12 — Testabilidade | Porta de linguagem simulável (3.2), data de referência (8) e seção 14 |
 
-Em particular:
+## 21. Estado atual do modelo
 
-| Capacidade | Principal suporte arquitetural |
-|---|---|
-| Receber/processar voz | Interface Conversacional |
-| Interpretar linguagem natural | Núcleo Conversacional |
-| Gerenciar contexto | Gerenciador de Contexto |
-| Gerenciar informações da tarefa | Gerenciador de Tarefa |
-| Selecionar ferramenta | Orquestrador de Ferramentas |
-| Preparar e validar chamada | Orquestrador / Contrato de Ferramentas |
-| Executar ferramenta | Orquestrador / Interface de Ferramentas |
-| Processar resultado | Núcleo Conversacional / Orquestrador |
-| Tratar falhas | Orquestrador / Núcleo / Gerenciador de Tarefa |
-| Gerenciar confirmação/cancelamento | Núcleo / Gerenciador de Tarefa / Interface |
-| Gerar resposta textual | Núcleo Conversacional |
-| Entregar resposta por voz | Interface Conversacional |
-
-A tabela não representa uma relação de exclusividade. As capacidades são distribuídas entre componentes conforme suas responsabilidades e podem envolver mais de um componente durante sua execução.
-
----
-
-# 17. Estado atual do modelo
-
-Esta versão do modelo define a **arquitetura lógica de referência** do sistema.
-
-O ponto central da arquitetura é a existência de uma fronteira explícita entre:
+Esta versão define a **arquitetura lógica de referência** do sistema. O ponto central é a fronteira explícita entre o raciocínio conversacional, que propõe, e a execução, que é controlada por software:
 
 ```text
-Linguagem / raciocínio conversacional
+Linguagem / raciocínio conversacional  (propõe)
                 │
                 ▼
-       Orquestração controlada
+     Orquestração controlada  (valida, autoriza, confirma, executa)
                 │
                 ▼
           Ferramentas
                 │
                 ▼
-       Sistema de domínio
+     Sistema de domínio  (aplica as regras de negócio)
 ```
 
-O **Contrato Lógico de Ferramentas** estabelece a abstração necessária para que essa fronteira seja implementada posteriormente por diferentes mecanismos tecnológicos.
+O **Contrato Lógico de Ferramentas** (seção 4) dá a abstração para que essa fronteira seja implementada depois por diferentes mecanismos. A escolha entre tool calling nativo da LLM, MCP ou camada própria ocorre na etapa de projeto, comparando suas características com os requisitos e com este contrato. A arquitetura não começa pela tecnologia: primeiro são definidos os responsáveis, as interfaces, os fluxos e os contratos.
 
-A escolha concreta entre mecanismos como **tool/function calling nativo da LLM, MCP ou uma camada própria de integração** deverá ocorrer em uma etapa posterior de projeto, comparando suas características com os requisitos e com o contrato lógico estabelecido nesta arquitetura.
+## 22. Alterações em relação à versão 1.2
 
-Dessa forma, a arquitetura não começa pela tecnologia. Primeiro são definidos os **responsáveis, as interfaces, os fluxos e os contratos**; posteriormente será selecionada a tecnologia capaz de implementar essas abstrações.
+| # | Alteração | Motivo | Seções |
+| --- | --- | --- | --- |
+| 1 | Papéis esclarecidos: a LLM propõe o `ToolRequest` completo; o Orquestrador verifica, valida, autoriza e executa, sem selecionar a ferramenta nem gerar argumentos. | A v1.2 atribuía seleção e preparo de argumentos à LLM e ao Orquestrador ao mesmo tempo. | 3.5, 4.4, 5, 18 |
+| 2 | Novo status REJECTED e erro estruturado (código, origem, recuperável, detalhes). | A v1.2 não distinguia recusa por regra de negócio de erro de parâmetro ou de falha técnica. | 4.5, 4.6 |
+| 3 | `ToolDefinition`: removidos `operation` e `required_parameters`; incluídos `side_effect`, `requires_confirmation`, `result_schema`, `error_catalog` e `timeout`. `ToolRequest`: incluídos `request_id` e `turn_id`; removidos `relevant_context` e `task_requirements`. | O contrato precisava suportar confirmação, verificação e rastreabilidade sem expor o domínio nem o contexto. | 4.1, 4.2 |
+| 4 | Contexto de sessão (identidade) separado do contexto conversacional; identidade aplicada pelo Orquestrador. | Na v1.2 o usuário era um parâmetro textual (exemplo do §7). | 3.3, 7, 15 |
+| 5 | Resolução de entidades e ambiguidade no Núcleo; o adaptador não converte nomes em identificadores. | A ambiguidade ficava escondida no adaptador. | 3.2, 7 |
+| 6 | Confirmação imposta por software e vinculada ao `request_id`; ramo de correção; semântica de cancelamento. | A v1.2 tinha apenas sim ou não e não garantia executar o que foi confirmado. | 3.5, 11 |
+| 7 | Gerenciador de Tarefa com cálculo determinístico de parâmetros faltantes e máquina de estados de 8 estados. | Os estados eram citados, mas não definidos. | 3.4, 12 |
+| 8 | Núcleo dividido em interpretação, política de diálogo e geração de resposta; portas de fala e de linguagem. | O Núcleo concentrava responsabilidades e STT e TTS não estavam explícitos. | 2, 3.1, 3.2 |
+| 9 | Verificação de estado após resultado inconclusivo, sem repetição automática de escritas. | Sem esse tratamento, INCONCLUSIVE não tinha efeito prático. | 10 |
+| 10 | Registro de Eventos como componente transversal, com identificadores de turno, tarefa e solicitação. | O RNF03 exige rastreabilidade que o modelo não especificava. | 14 |
+| 11 | Granularidade 1 para 1 registrada e ferramentas do estudo de caso definidas; removida das decisões em aberto. | Decisão tomada no estudo de caso (D-02). | 6, 18, 19 |
+| 12 | Novas seções: segurança, fidelidade da resposta, decisões de arquitetura e rastreabilidade com RF e RNF; princípios P11 e P12. | Alinhamento com os Requisitos v2.1 e o Estudo de Caso v0.3. | 15 a 18, 20 |
