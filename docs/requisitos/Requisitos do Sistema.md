@@ -2,13 +2,13 @@
 
 **Projeto:** TCC — Assistente Conversacional por Voz para Interação com Sistemas de Informação
 
-**Versão:** 2.0 (rascunho) | **Status:** Em elaboração | **Data:** 2026-11-14
+**Versão:** 2.1 (rascunho) | **Status:** Em elaboração | **Data:** 2026-11-14
 
 ## 1. Introdução
 
 ### 1.1 Propósito
 
-Este documento reúne os requisitos funcionais e não funcionais do assistente. Seus critérios de aceitação, junto com os casos de uso do estudo de caso, são os critérios imediatos de verificação do trabalho; as métricas da literatura (Visão, seção 11) ficam como trabalho futuro.
+Este documento reúne os requisitos funcionais e não funcionais do assistente. Ele substitui os Requisitos Funcionais Consolidados (v1.0) e a seção 9 do Documento de Visão (v1.1). Seus critérios de aceitação, junto com os casos de uso do estudo de caso, são os critérios imediatos de verificação do trabalho; as métricas da literatura (Visão, seção 11) ficam como trabalho futuro.
 
 Os requisitos são independentes do domínio. O estudo de caso aparece apenas como exemplo e na rastreabilidade.
 
@@ -24,7 +24,7 @@ Os requisitos são independentes do domínio. O estudo de caso aparece apenas co
 | Documento | Versão | Relação |
 | --- | --- | --- |
 | Documento de Visão | 1.1 | Problema, escopo e princípios de projeto. A seção 9 será substituída por uma referência a este documento. |
-| Especificação do Estudo de Caso | 0.2 | Operações, regras de negócio, casos de uso (UC01 a UC05) e casos de teste (CT-01 a CT-18). |
+| Especificação do Estudo de Caso | 0.3 | Operações, regras de negócio, casos de uso (UC01 a UC05), casos de teste (CT-01 a CT-18) e cenários conversacionais (CC-01 a CC-28). |
 | Modelo de Arquitetura | 1.2 | Será revisado a partir destes requisitos. |
 
 ## 2. Visão geral dos requisitos funcionais
@@ -269,24 +269,24 @@ Cada requisito indica como será verificado. A prioridade segue a convenção da
 
 ### 6.1 Requisitos funcionais × casos de uso × casos de teste
 
-Os casos de teste (CT) do estudo de caso verificam as ferramentas e o domínio. Os cenários conversacionais ainda precisam ser acrescentados (ponto Q-R3).
+Os casos de teste (CT) do estudo de caso verificam as ferramentas e o domínio. Os cenários conversacionais (CC) verificam o comportamento do assistente e estão na seção 10.5 do estudo de caso.
 
-| Requisito | Casos de uso | Casos de teste de referência |
+| Requisito | Casos de uso | Casos de teste e cenários de referência |
 | --- | --- | --- |
-| RF01 | Todos | Teste com reconhecimento de fala real |
-| RF02 | Todos | Cenários conversacionais a definir |
-| RF03 | UC04, UC05 | CT-02, CT-03 (escolha entre candidatos) |
-| RF04 | UC01, UC04 | CT-02, CT-03, CT-16 |
-| RF05 | Todos | Cenário a definir (solicitação fora do escopo) |
+| RF01 | Todos | CC-24; teste com reconhecimento de fala real |
+| RF02 | Todos | CC-01, CC-03, CC-20 |
+| RF03 | UC04, UC05 | CC-02, CC-07, CC-08, CC-16, CC-28; CT-02, CT-03 |
+| RF04 | UC01, UC04 | CC-05 a CC-08; CT-02, CT-03, CT-16 |
+| RF05 | Todos | CC-18, CC-19 |
 | RF06 | UC04, UC05 | CT-16 |
-| RF07 | Todos | CT-17, CT-18 |
-| RF08 | Todos | CT-01, CT-04, CT-08 a CT-11 |
-| RF09 | UC04, UC05 | CT-13 a CT-15, CT-17, CT-18 |
-| RF10 | UC04, UC05 | CT-07, CT-12 (confirmação); demais a definir |
-| RF11 | Todos | CT-01 a CT-18 (fidelidade das respostas) |
-| RF12 | Todos | Teste com síntese de voz real |
-| RF13 | Todos | Cenários a definir |
-| RF14 | Todos | Cenários a definir |
+| RF07 | Todos | CC-16, CC-21, CC-22; CT-17, CT-18 |
+| RF08 | Todos | CC-01, CC-12 a CC-15, CC-17; CT-01, CT-04, CT-08 a CT-11 |
+| RF09 | UC04, UC05 | CC-10, CC-21, CC-22; CT-13 a CT-15, CT-17, CT-18 |
+| RF10 | UC04, UC05 | CC-04, CC-09 a CC-11, CC-16, CC-28; CT-07, CT-12 |
+| RF11 | Todos | Todos os cenários (fidelidade das respostas); CT-01 a CT-18 |
+| RF12 | Todos | CC-04, CC-13, CC-15, CC-16 (datas faladas); teste com síntese de voz real |
+| RF13 | Todos | CC-23, CC-24 |
+| RF14 | Todos | CC-25 (Should); CC-26, CC-27 (Could) |
 
 ### 6.2 Mapeamento da versão 1.1 da Visão para esta versão
 
@@ -317,16 +317,17 @@ Os casos de teste (CT) do estudo de caso verificam as ferramentas e o domínio. 
 | RNF11 | RNF06 |
 | Novos | RF13, RF14, RNF09 a RNF12 |
 
-## 7. Pontos a validar
+## 7. Decisões sobre os pontos em aberto
 
-- **Q-R1:** os valores propostos (latência de até 5 s na mediana e 10 s no percentil 90; 3 itens e 3 frases por resposta; 3 execuções por cenário; 2 falhas consecutivas de compreensão) são pontos de partida e devem ser calibrados após o MVP.
-- **Q-R2:** confirmar as prioridades de RF13 (Should) e RF14 (Should e Could) e o que entra no MVP.
-- **Q-R3:** acrescentar ao estudo de caso cenários conversacionais: solicitação fora do escopo (por exemplo, renovar), confirmação negada, correção, cancelamento, repetição, encerramento, transcrição incerta e silêncio.
-- **Q-R4:** o resultado padronizado de ferramenta (RF07 CA2) inclui um status de recusa por regra de negócio, que o Modelo de Arquitetura v1.2 ainda não tem. Isso entra na revisão da arquitetura.
-- **Q-R5:** na v1.0, o RF05 da Visão aparecia como origem de dois requisitos (RF02 e RF04). Nesta versão a extração de parâmetros ficou apenas no RF04; confirmar.
+- **Q-R1:** os valores propostos (latência, concisão das respostas, número de execuções por cenário e de falhas consecutivas de compreensão) foram mantidos e serão revisados após o MVP.
+- **Q-R2:** as prioridades de RF13 (Should) e RF14 (Should e Could) foram mantidas.
+- **Q-R3:** os cenários conversacionais foram adicionados ao estudo de caso (seção 10.5, CC-01 a CC-28).
+- **Q-R4:** o status de recusa por regra de negócio no resultado de ferramenta (RF07 CA2) será tratado na revisão do Modelo de Arquitetura.
+- **Q-R5:** confirmado: a extração de parâmetros fica apenas no RF04.
 
 ## 8. Histórico de versões
 
 | Versão | Data | Descrição |
 | --- | --- | --- |
 | 2.0 | 2026-11-14 | Reescrita com critérios de aceitação por requisito, requisitos não funcionais consolidados, requisitos de voz (RF13 e RF14), prioridades e rastreabilidade. Substitui os Requisitos Funcionais Consolidados v1.0. |
+| 2.1 | 2026-11-14 | Pontos Q-R1 a Q-R5 resolvidos; rastreabilidade atualizada com os cenários conversacionais CC-01 a CC-28 do estudo de caso. |
