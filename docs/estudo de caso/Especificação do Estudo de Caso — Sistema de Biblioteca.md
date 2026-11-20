@@ -2,7 +2,7 @@
 
 **Projeto:** TCC — Assistente Conversacional por Voz para Interação com Sistemas de Informação
 
-**Versão:** 0.3 | **Status:** Em elaboração | **Data:** 2026-11-14
+**Versão:** 0.4 | **Status:** Em elaboração | **Data:** 2026-11-18
 
 ## 1. Identificação e propósito
 
@@ -17,7 +17,7 @@ O documento descreve o domínio (entidades, regras e operações). Decisões de 
 | Documento | Relação |
 | --- | --- |
 | Documento de Visão (v1.1) | Define o problema e o escopo geral; este documento detalha o estudo de caso. |
-| Requisitos do Sistema (v2.0) | Os requisitos são verificados pelos casos de teste e pelos cenários conversacionais deste documento (seções 10.4 e 10.5). |
+| Requisitos do Sistema (v2.2) | Os requisitos são verificados pelos casos de teste e pelos cenários conversacionais deste documento (seções 10.4 e 10.5). |
 | Modelo de Arquitetura (v1.2) | O mapeamento de ferramentas e o catálogo de erros (seções 6 e 7) alimentam a revisão da arquitetura. |
 
 ### 1.3 Escopo
@@ -256,7 +256,7 @@ Os casos CT-17 e CT-18 exigem injeção de falhas no serviço de domínio.
 
 ### 10.5 Cenários conversacionais
 
-Os cenários conversacionais verificam o comportamento do assistente em diálogos de vários turnos. Usam a base desta seção e a data de referência 2026-11-09, e cada um parte da base restaurada. As falas são exemplos: formulações equivalentes são aceitas. Em todos os cenários valem as regras gerais: os dados citados coincidem com os retornados pelas ferramentas (RF11 CA2) e nenhuma operação de escrita é executada sem confirmação (RF10 CA1). A coluna Requisitos refere-se ao documento Requisitos do Sistema (v2.0).
+Os cenários conversacionais verificam o comportamento do assistente em diálogos de vários turnos. Usam a base desta seção e a data de referência 2026-11-09, e cada um parte da base restaurada. As falas são exemplos: formulações equivalentes são aceitas. Em todos os cenários valem as regras gerais: os dados citados coincidem com os retornados pelas ferramentas (RF11 CA2) e nenhuma operação de escrita é executada sem confirmação (RF10 CA1). A coluna Requisitos refere-se ao documento Requisitos do Sistema (v2.2).
 
 | ID | Usuário | Falas do usuário (resumo) | Comportamento esperado | Requisitos |
 | --- | --- | --- | --- | --- |
@@ -288,6 +288,7 @@ Os cenários conversacionais verificam o comportamento do assistente em diálogo
 | CC-26 | U03 | Interrompe a leitura de uma lista de candidatos | A reprodução para e a nova fala é processada. | RF14 CA2 (Could) |
 | CC-27 | U03 | Silêncio após uma pergunta do assistente | Repete a pergunta uma vez e, persistindo o silêncio, encerra a sessão. | RF14 CA3 (Could) |
 | CC-28 | U03 | “Pode encerrar.” | Despede-se, encerra a sessão e descarta o contexto; uma nova conversa não retém informações da anterior. | RF10 CA6, RF03 CA4 |
+| CC-29 | U03 | Pedido de Dom Casmurro e, na confirmação, “Na verdade, quais livros eu tenho?”, seguido de “Sim.” (ou de “Não.”) | Avisa que, para tratar a nova solicitação, precisa encerrar o empréstimo em andamento e pede confirmação. Com o “sim”, cancela o empréstimo pendente (nada é registrado) e responde à consulta de empréstimos. Com o “não”, mantém o pedido pendente e repete a confirmação. | RF10 CA7 |
 
 Os cenários CC-21 e CC-22 exigem injeção de falhas no serviço de domínio, e os cenários CC-23 a CC-27 exigem a camada de voz ou a simulação de seus eventos (confiança baixa, silêncio, interrupção). Os demais podem ser executados com entrada em texto (RNF12). Os cenários CC-26 e CC-27 correspondem a requisitos de prioridade Could.
 
@@ -339,3 +340,4 @@ Nenhuma questão em aberto nesta versão. As questões Q-01 a Q-05 da versão 0.
 | 0.1 | 2026-11-09 | Versão inicial. |
 | 0.2 | 2026-11-14 | Remoção da operação de verificação de disponibilidade e renumeração das operações (OP01 a OP04); resolução das questões em aberto; inclusão de melhorias futuras. |
 | 0.3 | 2026-11-14 | Inclusão dos cenários conversacionais (seção 10.5, CC-01 a CC-28) e alinhamento com o documento Requisitos do Sistema v2.0. |
+| 0.4 | 2026-11-18 | Inclusão do cenário conversacional CC-29 (mudança de assunto durante tarefa pendente) e alinhamento com o documento Requisitos do Sistema v2.2. |
