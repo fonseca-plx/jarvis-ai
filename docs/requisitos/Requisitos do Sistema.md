@@ -2,7 +2,7 @@
 
 **Projeto:** TCC — Assistente Conversacional por Voz para Interação com Sistemas de Informação
 
-**Versão:** 2.1 (rascunho) | **Status:** Em elaboração | **Data:** 2026-11-14
+**Versão:** 2.2 (rascunho) | **Status:** Em elaboração | **Data:** 2026-11-18
 
 ## 1. Introdução
 
@@ -24,8 +24,8 @@ Os requisitos são independentes do domínio. O estudo de caso aparece apenas co
 | Documento | Versão | Relação |
 | --- | --- | --- |
 | Documento de Visão | 1.1 | Problema, escopo e princípios de projeto. A seção 9 será substituída por uma referência a este documento. |
-| Especificação do Estudo de Caso | 0.3 | Operações, regras de negócio, casos de uso (UC01 a UC05), casos de teste (CT-01 a CT-18) e cenários conversacionais (CC-01 a CC-28). |
-| Modelo de Arquitetura | 1.2 | Será revisado a partir destes requisitos. |
+| Especificação do Estudo de Caso | 0.4 | Operações, regras de negócio, casos de uso (UC01 a UC05), casos de teste (CT-01 a CT-18) e cenários conversacionais (CC-01 a CC-29). |
+| Modelo de Arquitetura | 1.3 | Define os componentes, contratos e fluxos que atendem a estes requisitos. |
 
 ## 2. Visão geral dos requisitos funcionais
 
@@ -178,6 +178,7 @@ O sistema deve permitir ao usuário controlar o andamento da interação: confir
 4. Com resposta negativa, o sistema cancela a operação; se o usuário indicar uma correção (“não, o outro livro”), a tarefa é retomada (RF09 CA4).
 5. O cancelamento é possível antes da execução; depois dela, desfazer exige uma nova operação.
 6. O usuário pode encerrar a conversa a qualquer momento; o sistema responde, encerra a sessão e descarta o contexto.
+7. Quando o usuário faz uma nova solicitação durante uma tarefa não concluída, o sistema avisa que será preciso encerrar a tarefa em andamento e só a encerra, iniciando a nova, se o usuário confirmar; se não confirmar, a tarefa em andamento continua.
 
 ### RF11 — Gerar a resposta textual
 
@@ -282,7 +283,7 @@ Os casos de teste (CT) do estudo de caso verificam as ferramentas e o domínio. 
 | RF07 | Todos | CC-16, CC-21, CC-22; CT-17, CT-18 |
 | RF08 | Todos | CC-01, CC-12 a CC-15, CC-17; CT-01, CT-04, CT-08 a CT-11 |
 | RF09 | UC04, UC05 | CC-10, CC-21, CC-22; CT-13 a CT-15, CT-17, CT-18 |
-| RF10 | UC04, UC05 | CC-04, CC-09 a CC-11, CC-16, CC-28; CT-07, CT-12 |
+| RF10 | UC04, UC05 | CC-04, CC-09 a CC-11, CC-16, CC-28, CC-29; CT-07, CT-12 |
 | RF11 | Todos | Todos os cenários (fidelidade das respostas); CT-01 a CT-18 |
 | RF12 | Todos | CC-04, CC-13, CC-15, CC-16 (datas faladas); teste com síntese de voz real |
 | RF13 | Todos | CC-23, CC-24 |
@@ -331,3 +332,4 @@ Os casos de teste (CT) do estudo de caso verificam as ferramentas e o domínio. 
 | --- | --- | --- |
 | 2.0 | 2026-11-14 | Reescrita com critérios de aceitação por requisito, requisitos não funcionais consolidados, requisitos de voz (RF13 e RF14), prioridades e rastreabilidade. Substitui os Requisitos Funcionais Consolidados v1.0. |
 | 2.1 | 2026-11-14 | Pontos Q-R1 a Q-R5 resolvidos; rastreabilidade atualizada com os cenários conversacionais CC-01 a CC-28 do estudo de caso. |
+| 2.2 | 2026-11-18 | Novo critério de aceitação RF10 CA7 (mudança de assunto durante tarefa pendente); rastreabilidade atualizada com o cenário CC-29. |
